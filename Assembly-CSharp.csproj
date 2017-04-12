@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.20506</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <RootNamespace></RootNamespace>
+    <ProjectGuid>{F7437441-723A-BC50-E18D-6A8FD397536F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AssemblyName>Assembly-CSharp</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <BaseDirectory>Assets</BaseDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>Temp\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;UNITY_5_3_OR_NEWER;UNITY_5_3_4;UNITY_5_3;UNITY_5;ENABLE_NEW_BUGREPORTER;ENABLE_AUDIO;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_FRAME_DEBUGGER;ENABLE_GENERICS;ENABLE_HOME_SCREEN;ENABLE_IMAGEEFFECTS;ENABLE_LIGHT_PROBES_LEGACY;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_PHYSICS;ENABLE_PLUGIN_INSPECTOR;ENABLE_SHADOWS;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;ENABLE_SPRITERENDERER_FLIPPING;ENABLE_SPRITES;ENABLE_SPRITE_POLYGON;ENABLE_TERRAIN;ENABLE_RAKNET;ENABLE_UNET;ENABLE_UNITYEVENTS;ENABLE_VR;ENABLE_WEBCAM;ENABLE_WWW;ENABLE_CLOUD_SERVICES;ENABLE_CLOUD_SERVICES_ADS;ENABLE_CLOUD_HUB;ENABLE_CLOUD_PROJECT_ID;ENABLE_CLOUD_SERVICES_PURCHASING;ENABLE_CLOUD_SERVICES_ANALYTICS;ENABLE_CLOUD_SERVICES_UNET;ENABLE_CLOUD_SERVICES_BUILD;ENABLE_CLOUD_LICENSE;ENABLE_EDITOR_METRICS;ENABLE_EDITOR_METRICS_CACHING;INCLUDE_DYNAMIC_GI;INCLUDE_GI;INCLUDE_IL2CPP;INCLUDE_DIRECTX12;PLATFORM_SUPPORTS_MONO;ENABLE_LOCALIZATION;ENABLE_ANDROID_ATLAS_ETC1_COMPRESSION;ENABLE_EDITOR_TESTS_RUNNER;UNITY_ANDROID;UNITY_ANDROID_API;ENABLE_SUBSTANCE;ENABLE_TEXTUREID_MAP;ENABLE_EGL;ENABLE_NETWORK;ENABLE_RUNTIME_GI;ENABLE_CRUNCH_TEXTURE_COMPRESSION;ENABLE_LOG_MIXED_STACKTRACE;ENABLE_UNITYWEBREQUEST;PLATFORM_SUPPORTS_ADS_ID;ENABLE_UNITYADS_RUNTIME;UNITY_UNITYADS_API;ENABLE_MONO;ENABLE_PROFILER;UNITY_ASSERTIONS;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN;UNITY_TEAM_LICENSE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>0169</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>Temp\bin\Release\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>0169</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.XML" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="UnityEngine">
+      <HintPath>D:/Unity/Editor/Data/Managed/UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEditor">
+      <HintPath>D:/Unity/Editor/Data/Managed/UnityEditor.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+     <Compile Include="Assets\_Scripts\Frame\UI\TTUIBind.cs" />
+     <Compile Include="Assets\_Scripts\Frame\UI\TTUIPage.cs" />
+     <Compile Include="Assets\_Scripts\Frame\UI\TTUIRoot.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJChiItem.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJMsgAutoDestory.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJMsgBox.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJMsgItem.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJPGHCAction.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJQuitWaitting.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Action\MJSwitchButton.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Audio\AudioController.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Audio\DateManger.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJCard.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJCardAction.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJCardsManager.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJCardsPile.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJDicePlace.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJHandCardArea.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Card\MJOutCardArea.cs" />
+     <Compile Include="Assets\_Scripts\MJ\HuPai\NaiziHuScript.cs" />
+     <Compile Include="Assets\_Scripts\MJ\HuPai\NormalHuScript.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Interface\MJHandCardInterface.cs" />
+     <Compile Include="Assets\_Scripts\MJ\MJScenesManager.cs" />
+     <Compile Include="Assets\_Scripts\MJ\MJUIManager.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Particle\MJPGCHAnim.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Particle\MJPriticleManager.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Player\MJPlayerItem.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Player\MJPlayerManager.cs" />
+     <Compile Include="Assets\_Scripts\MJ\Room\MJRoomInfo.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJDanJIeSuanPage.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJDeskPage.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJMyInfoPage.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJQuitRoomPage.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJUISettingPage.cs" />
+     <Compile Include="Assets\_Scripts\MJ\UIPage\MJZongJieSuanPage.cs" />
+     <Compile Include="Assets\_Scripts\Manager\ToolsManager.cs" />
+     <Compile Include="Assets\_Scripts\Model\MJOutCardInfo.cs" />
+     <Compile Include="Assets\_Scripts\Net\Event\APIS.cs" />
+     <Compile Include="Assets\_Scripts\Net\Event\CommonEvent.cs" />
+     <Compile Include="Assets\_Scripts\Net\Event\SocketEventHandle.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\ChatRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\ChiRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\ClientRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\CreateRoomRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\CurrentStatusRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\DissoliveRoomRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\GameReadyRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\GangCardRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\GaveUpRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\HeadRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\HupaiRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\JoinRoomRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\LoginChatRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\LoginRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\MessageBoxRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\MicInputRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\OutRoomRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\PengCardRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Request\PutOutCardRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\Response\ChiCardResponse.cs" />
+     <Compile Include="Assets\_Scripts\Net\Response\ClientResponse.cs" />
+     <Compile Include="Assets\_Scripts\Net\Response\JingResponse.cs" />
+     <Compile Include="Assets\_Scripts\Net\Response\ShaiZiResponse.cs" />
+     <Compile Include="Assets\_Scripts\Net\Socket\ChatSocket.cs" />
+     <Compile Include="Assets\_Scripts\Net\Socket\CustomSocket.cs" />
+     <Compile Include="Assets\_Scripts\Net\Socket\GetIp.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\CrateRoomSettingScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\EnterRoomScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\GameConfig.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\GlobalDataScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\HomePanelScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\LoginSystemScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\MicroPhoneInput.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\MyMahjongScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\System\UI_MicPhoneScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\Account.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\AvatarVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\BackLoginResponse.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\BackLoginResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\CardVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\DateVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\DissoliveRoomRequestVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\DissoliveRoomResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\EmptyClass.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\FinalGameEndItemVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\FinalGameEndVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GameBehaviourVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GamePlayBackVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GamePlayResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GangBackVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GangNoticeVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GangRequestVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GiftItemVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\GiftList.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\HupaiRequestVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\HupaiResponseItem.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\HupaiResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\LastOperationVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\LoginVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\LotteryData.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\OtherPengGangBackVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\OutRoomRequestVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\OutRoomResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\PlayerBackVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ReturnOnlineVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\RoomCreateResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\RoomCreateVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\RoomJoinResponseVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\RoomJoinVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ServiceVersionVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\SignalOverItemScript.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\StartGameVO.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\TotalInfo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\Version.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiDataItemVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiDataList.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiOneRoomData.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiRoomDataItem.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiRoomDataItemVo.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiRoomList.cs" />
+     <Compile Include="Assets\_Scripts\Net\VO\ZhanjiSearchRequest.cs" />
+     <Compile Include="Assets\_Scripts\Net\WeChat\WechatOperateScript.cs" />
+     <Compile Include="Assets\_Scripts\Other\BtnDelayActive.cs" />
+     <Compile Include="Assets\_Scripts\Other\MJName.cs" />
+     <Compile Include="Assets\_Scripts\Other\MJPath.cs" />
+     <Compile Include="Assets\_Scripts\Other\MJPostion.cs" />
+     <Compile Include="Assets\_Scripts\Other\MJSize.cs" />
+     <Compile Include="Assets\_Scripts\Test\Test.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Login\LoginPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\CreateRoomPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\EnterRoomPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\MainMenuPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\SelectRoomPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\UIHallFeedBack.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\UIHallHelp.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\UIShare.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\MainMenu\UIZhanJi.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Tool\ReloginUIPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Tool\ReturnLoginWantedPage.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Tool\ToolType.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Tool\WantedTextTool.cs" />
+     <Compile Include="Assets\_Scripts\UIPage\Tool\WantedWindowPage.cs" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values\ssdk_oks_strings.xml" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values\ssdk_strings.xml" />
+     <None Include="Assets\_Shader\MJ\Custom3D Text Shader.shader" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\drawable\ssdk_oks_classic_progressbar.xml" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\drawable\ssdk_oks_classic_platform_cell_back.xml" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values-en\ssdk_strings.xml" />
+     <None Include="Assets\_Font\MJ\Blue\BlueFont.fnt" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values\ssdk_oks_color_drawables.xml" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values\ssdk_instapaper_strings.xml" />
+     <None Include="Assets\Plugins\Android\ShareSDK\AndroidManifest.xml" />
+     <None Include="Assets\_Font\MJ\Yellow\YellowFont.fnt" />
+     <None Include="Assets\_Shader\MJ\Mahjong-Mahjong.shader" />
+     <None Include="Assets\_Shader\MJ\Mahjong-MahjongGouraud.shader" />
+     <None Include="Assets\_Shader\MJ\Mahjong-MahjongLow.shader" />
+     <None Include="Assets\Plugins\Android\ShareSDK\res\values-en\ssdk_oks_strings.xml" />
+ <Reference Include="UnityEngine.UI">
+ <HintPath>D:/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+ </Reference>
+ <Reference Include="UnityEngine.Networking">
+ <HintPath>D:/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
+ </Reference>
+ <Reference Include="LitJson">
+ <HintPath>D:/UnityProject/MJClient/MDBase/Assets/Dll/LitJson.dll</HintPath>
+ </Reference>
+ <Reference Include="DOTween">
+ <HintPath>D:/UnityProject/MJClient/MDBase/Assets/DOTween/DOTween.dll</HintPath>
+ </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Assembly-CSharp-firstpass.csproj">
+      <Project>{23E2AD09-A112-AD06-0263-56619A16D74C}</Project>      <Name>Assembly-CSharp-firstpass</Name>    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  
+</Project>
