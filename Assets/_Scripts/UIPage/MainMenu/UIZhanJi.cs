@@ -1,66 +1,95 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
 using TinyTeam.UI;
 using UnityEngine.UI;
+using AssemblyCSharp;
 /// <summary>
 /// 战绩ui
 /// </summary>
 public class UIZhanJi: TTUIPage{
+    private Transform zhanJiContent;
+    private Vector2 itemSize;
+    private Text wantedText;
+
 	public UIZhanJi() : base(UIType.PopUp, UIMode.HideOther, UICollider.None)
 	{
-		uiPath = MJPath.UIZhanJIPath;
+		uiPath = MyPath.UIZhanJIPath;
 	}
-    private Transform Content;
-    private int ListLength=8;
-    private List<Transform> InfoList=new List<Transform>();
   
 	public override void Awake(GameObject go)
 	{
-		findView();
-		setBtnClickListener();
+        MJUIManager._instance.uiZhanJi = this;
+        init();
 	}
 
     /// <summary>
-    /// 设置监听
+    /// 初始化
     /// </summary>
-	private void setBtnClickListener()
-	{
-		this.transform.Find("Bg/BtnBack").GetComponent<Button>().onClick.AddListener(() => {
-			Hide();
-		});
-	}
-
-    /// <summary>
-    /// 找到view
-    /// </summary>
-	private void findView(){
-        Content = this.transform.Find("Bg/ScrollPanel/Content");
-        for(int i = 0; i < ListLength; i++)
-        {
-            string name = "Row" + i;
-            InfoList.Add(Content.Find(name));
-        }
-        //默认为隐藏状态
-        foreach(Transform row in InfoList)
-        {
-            row.gameObject.SetActive(false);
-        }
-	}
-
-
-    public void setInfoForRowAtIndex(int index, string time,string[] playerName,Sprite[] playerHeadImage,string[] score)
+    private void init()
     {
-        InfoList[index].gameObject.SetActive(true);
-        InfoList[index].Find("Value/TimeLabel").GetComponent<Text>().text = time;
-        for(int i = 0; i < playerName.Length; i++)
+        zhanJiContent = transform.FindChild("Bg/ScrollPanel/Content");
+        itemSize = zhanJiContent.GetComponent<GridLayoutGroup>().cellSize;
+        wantedText = transform.FindChild("Bg/ScrollPanel/Wanted").GetComponent<Text>();
+        wantedText.gameObject.SetActive(false);
+        transform.FindChild("Bg/BtnBack").GetComponent<Button>().onClick.AddListener(() =>
         {
-            string name = "Player" + i;
-            Transform player=InfoList[index].Find("Value/"+name);
-            player.gameObject.SetActive(true);
-            player.Find("HeadImage").GetComponent<Image>().overrideSprite=playerHeadImage[i];
-            player.Find("Name").GetComponent<Text>().text=playerName[i];
-            player.Find("Score").GetComponent<Text>().text = score[i];
+            Hide();
+        });
+    }
+
+    /// <summary>
+    /// 设置战绩信息
+    /// </summary>
+    /// <param name="roomlist"></param>
+    public void setZhanJi(ZhanjiRoomList roomlist,Vector3 contentPos)
+    {
+        if (roomlist==null||roomlist.roomDataList==null||roomlist.roomDataList.Count==0)
+        {
+            wantedText.text = MyName.NoZhanJiRecord;
+            wantedText.gameObject.SetActive(true);
+            return;
         }
+        //摧毁之前的
+        MJCardAction.Instance.destroyAllChild(zhanJiContent);
+
+        GameObject temp = Resources.Load<GameObject>(MyPath.MJZhanJIItenPath);
+       
+       for (int i=0;i<roomlist.roomDataList.Count;i++)
+       {
+            GameObject zhanjiItem = GameObject.Instantiate(temp);
+            zhanjiItem.transform.SetParent(zhanJiContent);
+            zhanjiItem.transform.localScale = Vector3.one;
+
+            zhanjiItem.GetComponent<ZhanjiRoomItemScript>().setUI(roomlist.roomDataList[i], i+1);
+        }
+
+        zhanJiContent.GetComponent<Image>().rectTransform.sizeDelta = new Vector2(itemSize.x,(itemSize.y+5)*roomlist.roomDataList.Count);
+
+        if (contentPos!=Vector3.zero)
+        {
+            zhanJiContent.localPosition =contentPos;
+        }
+        else
+        {
+            zhanJiContent.localPosition = new Vector3(zhanJiContent.localPosition.x, 0, zhanJiContent.localPosition.z);
+        }
+
+       
+
+    }
+
+    /// <summary>
+    /// 获取容器的状态
+    /// </summary>
+    /// <returns></returns>
+    public Vector3 getContentPos()
+    {
+        return zhanJiContent.localPosition;
+    }
+
+    public override void Hide()
+    {
+        gameObject.SetActive(false);
+        GlobalDataScript.mainMenuState.zhanJiReSet();
     }
 
 }

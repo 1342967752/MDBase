@@ -7,12 +7,16 @@ using System.Collections.Generic;
 public class MJDicePlace : MonoBehaviour {
     public static MJDicePlace _instance;
 
-    private Animator animator;
+    private Animator dirAnimator;//方向anim
+    private Animator shaiZiAnimator;//色子动画
+    private GameObject shaiZi;//色子
     private TextMesh timeText;
     private int time=0;//剩余时间
     private bool isStartTimer = true;
     private GameObject dicePlaceGB;
     private Dictionary<string, string> directionDic;
+
+    private int dianShu = 0;//色子点数
     void Awake()
     {
         _instance = this;
@@ -25,27 +29,42 @@ public class MJDicePlace : MonoBehaviour {
     private void init()
     {
         directionDic = new Dictionary<string, string>();
-        animator = transform.FindChild("DicePlace/DicePlace").GetComponent<Animator>();
+        dirAnimator = transform.FindChild("DicePlace/DicePlace").GetComponent<Animator>();
+        shaiZi = transform.FindChild("Shaizi").gameObject;
+        shaiZiAnimator = shaiZi.GetComponent<Animator>();
         timeText = transform.FindChild("Time").GetComponent<TextMesh>();
         dicePlaceGB = transform.FindChild("DicePlace").gameObject;
         startTimer();
-        animator.SetInteger("change", 0);
+        shaiZiAnimator.SetInteger("dianshu", 0);
+        dirAnimator.SetInteger("change", 0);
+        shaiZi.SetActive(false);
+        timeText.gameObject.SetActive(false);
     }
 
     /// <summary>
     /// 设置出牌方向
     /// </summary>
-    /// <param name="direction">"E"东 "W"西 "S"南 "N"北</param>
+    /// <param name="direction">上下左右</param>
     /// <param name="time">显示时间</param>
     public void setPointer(string direction,int time)
     {
-        direction = directionDic[direction];
+        if (!timeText.gameObject.activeInHierarchy)
+        {
+            timeText.gameObject.SetActive(true);
+        }
+
+        if (directionDic.ContainsKey(direction))
+        {
+            direction = directionDic[direction];
+        }
+
         switch (direction)
         {
-            case "E":animator.SetInteger("change",1);break;
-            case "W":animator.SetInteger("change",3); break;
-            case "S": animator.SetInteger("change", 2); break;
-            case "N": animator.SetInteger("change", 4); break;
+            case "E": dirAnimator.SetInteger("change",1);break;
+            case "W": dirAnimator.SetInteger("change",3); break;
+            case "S": dirAnimator.SetInteger("change", 2); break;
+            case "N": dirAnimator.SetInteger("change", 4); break;
+            case "C": dirAnimator.SetInteger("change", 0); break;//关闭
             default:Debug.Log("没有该方向->" + direction);break;
         }
         this.time = time;
@@ -57,6 +76,7 @@ public class MJDicePlace : MonoBehaviour {
     /// <param name="direction">上下左右</param>
     public void setMyDirection(string direction)
     {
+        directionDic.Clear();
         switch (direction)
         {
             case DirectionEnum.Bottom:
@@ -64,6 +84,7 @@ public class MJDicePlace : MonoBehaviour {
                 directionDic.Add(DirectionEnum.Left,"N");
                 directionDic.Add(DirectionEnum.Top,"W");
                 directionDic.Add(DirectionEnum.Right, "S");
+                dicePlaceGB.transform.localEulerAngles = Vector3.zero;
                 break;
             case DirectionEnum.Left: dicePlaceGB.transform.localEulerAngles = Vector3.up * -90;
                 directionDic.Add(DirectionEnum.Bottom, "N");
@@ -138,7 +159,27 @@ public class MJDicePlace : MonoBehaviour {
     /// <param name="two"></param>
     public void setShaiZi(int one,int two)
     {
+        Debug.Log("one:" + one + "|" + "two:" + two);
+        dianShu = one + two;
+    }
 
+    /// <summary>
+    /// 启动色子动画
+    /// </summary>
+    public void startMoveShaiZi()
+    {
+        shaiZi.SetActive(true);
+        Debug.Log("点数:" + dianShu);
+        shaiZiAnimator.SetInteger("dianshu",dianShu);
+    }
+
+    /// <summary>
+    /// 隐藏色子
+    /// </summary>
+    public void hintShaiZi()
+    {
+        shaiZiAnimator.SetInteger("dianshu", 0);
+        shaiZi.SetActive(false);
     }
 
     /// <summary>
@@ -146,7 +187,18 @@ public class MJDicePlace : MonoBehaviour {
     /// </summary>
     public void reset()
     {
-        animator.SetInteger("change", 0);
+        dirAnimator.SetInteger("change", 0);
+        shaiZiAnimator.SetInteger("dainshu", 0);
+        shaiZi.SetActive(false);
+        timeText.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 初始化时间
+    /// </summary>
+    public void initTimer()
+    {
+        timeText.text = "00";
     }
 
     void OnDestroy()
@@ -156,6 +208,5 @@ public class MJDicePlace : MonoBehaviour {
             Destroy(_instance);
             _instance = null;
         }
-        Destroy(gameObject);
     }
 }

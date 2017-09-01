@@ -2,21 +2,21 @@
 
 	public class APIS
 	{
-		
-
         //http://114.215.116.40:8080/download/
         public const string mainHost= "192.168.188.47";//114.55.25.94 //192.168.188.47
         public const string getIpAddress = "http://www.roay.cn/ip.txt";
-        public const string UPDATE_INFO_JSON_URL = "http://www.weipaigame.com/downLoad/appDown/update.xml";//服务器上最新的软件版本信息存储文件
-		public const string chatSocketUrl = "114.55.25.94";
+        public const string UPDATE_INFO_JSON_URL = "";//服务器上最新的软件版本信息存储文件 //http://www.roay.cn/downLoad/appDown/update.xml
+    public static string chatSocketUrl = "192.168.188.47";
 		public static string socketUrl = "192.168.188.47";
 
 		public const string PIC_PATH = "http://www.weipaigame.com:8080/";
-		public const string ImgUrl = "http://118.178.20.36:9096/weiPaiImage/";
+		public const string ImgUrl = "http://www.roay.cn/downLoad/appDown/GameIcon.png";
+        public const string adInfoIndexUrl = "";//http://www.roay.cn:8080/MJGateway/adinfo/index
+    public const string adInfoDateUrl = "";//http://www.roay.cn:8080/MJGateway/adinfo/date
+    public static string AppDownLoadAddress = "";//app下载地址
+        
 
-
-
-		public const int head = 0x000030;
+        public const int head = 0x000030;
 		public const int headRESPONSE = 0x000031;
 
 		//游戏关闭返回
@@ -79,7 +79,7 @@
 		public const int MessageBox_Notice = 204;
 
 		public const int QUITE_LOGIN=0x555555;//退出登录调用，仅限于正常登录
-		public const int CARD_CHANGE=0x777777;
+		public const int CARD_CHANGE=0x777777;//房卡更新回调
 
 		public const int OFFLINE_NOTICE = 0x000015;
 	    public const int ONLINE_NOTICE = 0x001111;
@@ -92,11 +92,14 @@
 
 	    public const int Game_FollowBander_Notice = 0x100016;//跟庄
 
+         public const int LOCATION_DIS = 0x123130;//发送地理位置
+
+
         // 骰子点数
          public const int SAIZIPOINT_RESPONE = 0x123127;
 
 
-         public const int GAME_BROADCAST = 0x157777;//游戏公告
+        public const int GAME_BROADCAST = 0x157777;//游戏公告
 		public const int CONTACT_INFO_REQUEST= 0x156666;//添加房卡请求数据
 		public const int CONTACT_INFO_RESPONSE = 0x155555;//添加房卡返回数据
 		public const int HOST_UPDATEDRAW_RESPONSE = 0x010111;//抽奖信息变化
@@ -110,7 +113,15 @@
 		public const int TIP_MESSAGE = 0x160016;
 
 		public const int OTHER_TELE_LOGIN = 0x211211;//其他设备登录
-	}
+
+        public const int LOGINOUTGAME_MSG_REQUEST = 0x555555;//请求退出游戏
+
+        //客户端提交反馈
+        public const int FEEDBACK_REQUEST = 0x223001;
+        public const int FEEDBACK_RESPONSE = 0x223002;
+
+
+}
 
 
 

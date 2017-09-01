@@ -27,6 +27,11 @@ public class MJScenesManager : MonoBehaviour {
         {
             return;
         }
+
+        if (name.Equals(SceneName.Login))
+        {
+            GlobalDataScript.reinitData();
+        }
         SceneManager.LoadScene(name);
     }
 
@@ -45,4 +50,5 @@ public class SceneName
     public static string Login = "Login";
     public static string MainMenu = "MainMenu";
     public static string MaJiang = "MaJiang";
+    public static string MaJiangRecord = "MaJiangRecord";
 }

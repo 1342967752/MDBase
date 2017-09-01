@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
-using DG.Tweening;
 using UnityEngine.Events;
+using System.Collections;
 
 public class MJPGCHAnim : MonoBehaviour {
     private UnityAction endUa = null;
@@ -11,7 +11,13 @@ public class MJPGCHAnim : MonoBehaviour {
     /// </summary>
 	public void playPunch()
     {
-        transform.DOPunchScale(Vector3.one*.3f, 0.5f).OnComplete(onComplete);
+        StartCoroutine(delay());
+    }
+
+    IEnumerator delay()
+    {
+        yield return new WaitForSeconds(0.6f);
+        onComplete();
     }
 
     /// <summary>
@@ -34,4 +40,5 @@ public class MJPGCHAnim : MonoBehaviour {
     {
         endUa = ua;
     }
+
 }

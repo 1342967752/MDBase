@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using UnityEngine.Events;
 
 public enum AnimType
 {
@@ -32,6 +32,9 @@ public class MJPriticleManager : MonoBehaviour {
         }
     }
 
+    public UnityAction gangCallBack;//杠回调
+    public UnityAction huCallBack;//胡回调
+
     /// <summary>
     /// 播放动画
     /// </summary>
@@ -42,35 +45,38 @@ public class MJPriticleManager : MonoBehaviour {
         switch (type)
         {
             case AnimType.None:break;
-            case AnimType.Gang:loadAnim("Gang",pos); break;
-            case AnimType.Chi: loadAnim("Chi", pos); break;
-            case AnimType.Peng: loadAnim("Peng", pos); break;
-            case AnimType.Hu: loadAnim("Hu", pos); break;
-            case AnimType.Zimo: loadAnim("ZiMo", pos); break;
+            case AnimType.Gang:loadAnim("Gang",pos,gangCallBack); break;
+            case AnimType.Chi: loadAnim("Chi", pos,null); break;
+            case AnimType.Peng: loadAnim("Peng", pos,null); break;
+            case AnimType.Hu: loadAnim("Hu", pos,huCallBack); break;
+            case AnimType.Zimo: loadAnim("ZiMo", pos, huCallBack); break;
             case AnimType.Duiju:loadAnimToGame("DuiJu");break;
         }
     }
 
     /// <summary>
-    /// 加载动画,使用dotween
+    /// 加载动画（碰杠胡）
     /// </summary>
     /// <param name="path"></param>
-    private void loadAnim(string name,string pos)
+    /// <param name="pos">座位</param>
+    /// <param name="ua">动画结束执行函数</param>
+    private void loadAnim(string name,string pos,UnityAction ua)
     {
         Transform parent = MJPlayerManager._instance.getTransfromByPos(pos);
-        GameObject temp = Instantiate(Resources.Load<GameObject>(MJPath.MJParticlePath + name));
+        GameObject temp = Instantiate(Resources.Load<GameObject>(MyPath.MJParticlePath + name));
         temp.transform.SetParent(parent);
         temp.transform.localScale = Vector3.one;
         //设置位置
         switch (pos)
         {
-            case DirectionEnum.Bottom: temp.transform.localPosition = MJPostion.bottonPGHCPos ;break;
-            case DirectionEnum.Top: temp.transform.localPosition = MJPostion.topPGHCPos; break;
-            case DirectionEnum.Right: temp.transform.localPosition = MJPostion.rightPGHCPos; break;
-            case DirectionEnum.Left: temp.transform.localPosition = MJPostion.leftPGHCPos; break;
+            case DirectionEnum.Bottom: temp.transform.localPosition = MyPostion.bottonPGHCPos ;break;
+            case DirectionEnum.Top: temp.transform.localPosition = MyPostion.topPGHCPos; break;
+            case DirectionEnum.Right: temp.transform.localPosition = MyPostion.rightPGHCPos; break;
+            case DirectionEnum.Left: temp.transform.localPosition = MyPostion.leftPGHCPos; break;
         }
 
         temp.GetComponent<MJPGCHAnim>().playPunch();
+        temp.GetComponent<MJPGCHAnim>().setEndFun(ua);
     }
 
     /// <summary>
@@ -79,7 +85,7 @@ public class MJPriticleManager : MonoBehaviour {
     /// <param name="name"></param>
     private void loadAnimToGame(string name)
     {
-        GameObject temp = Instantiate(Resources.Load<GameObject>(MJPath.MJParticlePath + name));
+        GameObject temp = Instantiate(Resources.Load<GameObject>(MyPath.MJParticlePath + name));
         temp.transform.SetParent(GameObject.Find("UIRoot/FixedRoot").transform);
         temp.transform.localPosition = Vector3.zero;
         temp.transform.localScale = Vector3.one;
@@ -89,7 +95,7 @@ public class MJPriticleManager : MonoBehaviour {
     {
         if (_instance!=null)
         {
-            Destroy(gameObject);
+            Destroy(_instance);
             _instance = null;
         }
     }

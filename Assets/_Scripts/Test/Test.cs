@@ -1,46 +1,53 @@
 ﻿using System.Collections.Generic;
-using TinyTeam.UI;
+
 using UnityEngine;
-using AssemblyCSharp;
+
 
 public class Test : MonoBehaviour {
     public int point = 11;
-
-	// Update is called once per frame
-	void Update ()
+   
+    // Update is called once per frame
+    void Update ()
     {
-	    if (Input.GetKeyDown(KeyCode.W))
+        if (Input.GetKeyDown(KeyCode.W))
 	    {
             //MJCardsManager._instance.test01();
             //MJDicePlace._instance.setMyDirection("S");
             //MJUIManager._instance.mainMenuPage.setBroadCast("888888");
-            HupaiResponseItem hu = new HupaiResponseItem();
-            hu.gangScore = 20;
-            hu.nickname = "00";
-            hu.totalScore = 50;
-            hu.totalInfo = new TotalInfo();
-            hu.totalInfo.hu = "55:4:zi_common:20";
-            hu.paiArray = new int[14];
-            for (int i=0;i<14;i++)
+            //HupaiResponseItem hu = new HupaiResponseItem();
+            //hu.gangScore = 20;
+            //hu.nickname = "00";
+            //hu.totalScore = 50;
+            //hu.totalInfo = new TotalInfo();
+            //hu.totalInfo.hu = "55:4:zi_common:20";
+            List<string> list = new List<string>();
+            for (int i=0;i<15;i++)
             {
-                if (i==0)
-                {
-                    hu.paiArray[i] = 14;
-                }
-                else
-                {
-                    hu.paiArray[i] = 0;
-                }
+                list.Add("3");
             }
-            MJUIManager._instance.mJDanJIeSuan.setPlayerInfo(55, null, 99,hu);
+
+            MJUIManager._instance.mJDanJIeSuan.setHuCardList(list);
+            MJUIManager._instance.mJDanJIeSuan.setHuCard("4", list.Count);
         }
 
         if (Input.GetKeyDown(KeyCode.A))
         {
             //MJDicePlace._instance.setDirection("S",10);
-            MJCardsManager._instance.addCard(DirectionEnum.Bottom, point+"");
-            GlobalDataScript.isDrag = true;
+            // TTUIPage.ClosePage<MJDanJIeSuan>();
+            //MJPGHCAction._instance.showChi();
+            //MJPGHCAction._instance.showMulChi(new List<string>() { "0", "6", "7" });
+            // MJCardsManager._instance.bottonAddCard("3");
+            //MJUIManager._instance.mJDanJIeSuan.setHuPaiMode(0, 1);
+            //MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Bottom, 20);
+            //MJPGHCAction._instance.showHu();
+            //HornInfo info = new HornInfo();
+            //info.nickName = "baba";
+            //info.info = "oo";
+            //Horn.instance.addHorn(info);
+            //MJUIManager._instance.adPage.Refresh();
+            MJCardsManager._instance.addCard(DirectionEnum.Left,"9");
         }
+
 
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -56,10 +63,14 @@ public class Test : MonoBehaviour {
             ji.fuJingPai = 33;
             ji.zhengJingPai =32;
             MJCardsManager._instance.jingPai = ji;
+            MJHandCardArea.jingPai = ji;
             MJUIManager._instance.mJDeskPage.setJing(ji.zhengJingPai,ji.fuJingPai);
             Debug.Log("手牌:" + name.Count);
-            MJCardsManager._instance.startGame(name);
             MJCardsManager._instance.addCard(DirectionEnum.Bottom, name[13]);
+            name.RemoveAt(13);
+            MJCardsManager._instance.startGame(name,name,name,name);
+            MJCardsPile._instance.createCardPile();
+            
         }
 
         if (Input.GetKeyDown(KeyCode.P))
@@ -70,7 +81,11 @@ public class Test : MonoBehaviour {
             // MJCardsManager._instance.chiCard(DirectionEnum.Top, 6,7,5);
             //GameObject.Find("init").GetComponent<MyMahjongScript>().reSet();
             //MJScenesManager.Instance.loadSceneNotAnim(SceneName.MaJiang);
-            MJCardsManager._instance.gangCard(DirectionEnum.Bottom,point+"",false);
+            MJCardsManager._instance.pengCard(DirectionEnum.Left,point+"",false);
+         
+            // WechatOperateScript._instance.shareAchievementToWeChat(PlatformType.WeChat);
+            // MJCardsManager._instance.pengCard(DirectionEnum.Bottom, point + "", false);
+            //MJUIManager._instance.loadingPage.Active();
         }
         if (Input.GetKeyDown(KeyCode.G))
         {
@@ -83,7 +98,7 @@ public class Test : MonoBehaviour {
             //MJCardsPile._instance.setJing(10,10);
             //MJCardsManager._instance.gangCard(DirectionEnum.Top,"6",true);
             //AudioController.Instance.playBGMByName("bgm");
-            MJCardsManager._instance.chiCard(DirectionEnum.Bottom,1, 2,3);
+            MJCardsManager._instance.gangCard(DirectionEnum.Left,point+"",false,false);
         }
         if (Input.GetKeyDown(KeyCode.O))
         {
@@ -94,7 +109,7 @@ public class Test : MonoBehaviour {
             //MJCardsPile._instance.getCard();
             //HupaiResponseVo hupai = new HupaiResponseVo();
             //hupai.avatarList = new List<HupaiResponseItem>();
-            //for (int i=0; i<4;i++)
+            //for (int i = 0; i < 4; i++)
             //{
             //    HupaiResponseItem h = new HupaiResponseItem();
             //    h.totalInfo = new TotalInfo();
@@ -102,18 +117,31 @@ public class Test : MonoBehaviour {
             //    h.nickname = "nihao";
             //    h.totalScore = 77;
             //    h.totalInfo.scores = 30 + "";
+            //    h.totalInfo.hu=""
             //    hupai.avatarList.Add(h);
             //    MJUIManager._instance.mJDanJIeSuan.setPlayerInfo(i, null, h);
             //}
             //MJCardsManager._instance.outCard(DirectionEnum.Top, "5");
-            List<string> name = new List<string>();
-            name.Add(32 + "");
-            for (int i = 0; i < 13; i++)
-            {
-                name.Add((int)Random.Range(0, 17) + "");
-            }
 
-            MJCardsManager._instance.huCard(DirectionEnum.Top, name);
+
+            //List<string> name = new List<string>();
+            //name.Add(32 + "");
+            //for (int i = 0; i < 13; i++)
+            //{
+            //    name.Add((int)Random.Range(0, 17) + "");
+            //}
+
+            //MJCardsManager._instance.huCard(DirectionEnum.Top, name);
+            //MJCardsManager._instance.outCard(DirectionEnum.Left,""+point);
+            MJPlayerManager._instance.setHu(DirectionEnum.Bottom, true);
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            MJCardsManager._instance.chiCard(DirectionEnum.Left, 2, 2, 2, false);
         }
     }
-}
+
+  
+}  
+

@@ -9,7 +9,6 @@ namespace AssemblyCSharp
 	{
 		public Account account;
 
-		//public int cardIndex; 
 		public bool isOnLine;
 		public bool isReady;
 		public bool main;
@@ -22,16 +21,27 @@ namespace AssemblyCSharp
 		public string IP;
         public int huType;
         public int queType;
+        public int winTimes;
+        public int drawTimes;
+        public int loseTimes;
+        public string locationName;//位置信息
+        
+
 
         public bool hasMopaiChupai;
 
 
         public void resetData(){
-		//	cardIndex = 0;
-			isOnLine = false;
+			//isOnLine = false;
 			isReady = false;
 			main = false;
 			roomId = 0;
+
+
+            chupais = null;
+            commonCards = 0;
+            paiArray = null;
+            huReturnObjectVO = null;
 		}
 	}
 }

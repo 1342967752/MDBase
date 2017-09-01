@@ -65,7 +65,7 @@ public class CrateRoomSettingScript : MonoBehaviour {
 		sendVo.roomType = GameConfig.GAME_TYPE_NANCHANG;
         sendVo.addWordCard = true;
 		string sendmsgstr = JsonMapper.ToJson (sendVo);
-		if (GlobalDataScript.loginResponseData.account.roomcard > 0) {
+		if (GlobalDataScript.loginResponseData !=null&& GlobalDataScript.loginResponseData.account.roomcard > 0) {
 			CustomSocket.getInstance ().sendMsg (new CreateRoomRequest (sendmsgstr));
 		} else {
             WantedTextTool.Instance.addTip("你的房卡数量不足，不能创建房间", 1);
@@ -134,6 +134,7 @@ public class CrateRoomSettingScript : MonoBehaviour {
 			GlobalDataScript.loginResponseData.main = true;
 			GlobalDataScript.loginResponseData.isOnLine = true;
             GlobalDataScript.roomJoinResponseData = null;//设置加入房间信息为空
+            
             MJScenesManager.Instance.loadSceneNotAnim("MaJiang");
 
 		} else {

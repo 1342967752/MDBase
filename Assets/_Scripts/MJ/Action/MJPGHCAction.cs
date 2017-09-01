@@ -66,6 +66,11 @@ public class MJPGHCAction : MonoBehaviour {
     #region 按钮显示
     public void showPeng()
     {
+        if (btns["peng"].activeInHierarchy)
+        {
+            return;
+        }
+
         gameObject.SetActive(true);
         btns["peng"].SetActive(true);
         btns["peng"].transform.localPosition = pos[index--];
@@ -73,6 +78,11 @@ public class MJPGHCAction : MonoBehaviour {
 
     public void showChi()
     {
+        if (btns["chi"].activeInHierarchy)
+        {
+            return;
+        }
+
         gameObject.SetActive(true);
         btns["chi"].SetActive(true);
         btns["chi"].transform.localPosition = pos[index--];
@@ -80,6 +90,11 @@ public class MJPGHCAction : MonoBehaviour {
 
     public void showGang()
     {
+        if (btns["gang"].activeInHierarchy)
+        {
+            return;
+        }
+
         gameObject.SetActive(true);
         btns["gang"].SetActive(true);
         btns["gang"].transform.localPosition = pos[index--];
@@ -87,6 +102,11 @@ public class MJPGHCAction : MonoBehaviour {
 
     public void showHu()
     {
+        if (btns["hu"].activeInHierarchy)
+        {
+            return;
+        }
+
         gameObject.SetActive(true);
         btns["hu"].SetActive(true);
         btns["hu"].transform.localPosition = pos[index--];
@@ -177,7 +197,6 @@ public class MJPGHCAction : MonoBehaviour {
         isMulChi = false; 
     }
 
-  
     /// <summary>
     /// 创建吃牌item
     /// </summary>
@@ -188,9 +207,12 @@ public class MJPGHCAction : MonoBehaviour {
             return;
         }
 
+        MJCardAction.Instance.removeTheSame(minNames);//去重
+        MJCardAction.Instance.sort(minNames);//排序
+
         for (int i=0;i<minNames.Count;i++)
         {
-            GameObject temp = Instantiate(Resources.Load<GameObject>(MJPath.MJChiItemPath));
+            GameObject temp = Instantiate(Resources.Load<GameObject>(MyPath.MJChiItemPath));
             temp.transform.SetParent(mulChi.transform);
             temp.transform.localScale = Vector3.one;
             temp.GetComponent<MJChiItem>().setCards(mulChiCardsName[i]);

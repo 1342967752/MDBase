@@ -1,15 +1,18 @@
 ﻿using UnityEngine;
 using TinyTeam.UI;
 using UnityEngine.UI;
+using System.Collections.Generic;
 /// <summary>
 /// 进入房间拨号盘
 /// </summary>
 public class EnterRoomPage : TTUIPage {
     public EnterRoomPage() : base(UIType.Fixed, UIMode.HideOther, UICollider.None)
 	{
-        uiPath = MJPath.EnterRoomPagePath;
+        uiPath = MyPath.EnterRoomPagePath;
     }
+    private List<Transform> inputLabelList=new List<Transform>();
     private InputField roomNumberInput;
+    public const int ROOMNUMBERLENGTH = 6;
     public override void Awake(GameObject go)
     {
         MJUIManager._instance.enterRoomPage = this;
@@ -17,12 +20,30 @@ public class EnterRoomPage : TTUIPage {
         setBtnClickListener();
     }
 
+    public override void Active()
+    {
+        gameObject.SetActive(true);
+        cleanNum();
+    }
+
+    /// <summary>
+    /// 清除数字
+    /// </summary>
+    private void cleanNum()
+    {
+        for (int i = 0; i < inputLabelList.Count; i++)
+        {
+            inputLabelList[i].GetComponent<Text>().text = "";
+        }
+        inputLength = 0;
+    }
+
     /// <summary>
     /// 设置按钮监听
     /// </summary>
     private void setBtnClickListener()
     {
-        this.transform.Find("BtnBack").GetComponent<Button>().onClick.AddListener(() =>
+        this.transform.Find("Bg/BtnBack").GetComponent<Button>().onClick.AddListener(() =>
         {
             Hide();
         });
@@ -68,27 +89,19 @@ public class EnterRoomPage : TTUIPage {
         });
         this.transform.Find("KeyBord/initBtn").GetComponent<Button>().onClick.AddListener(() =>
         {
-            roomNumberInput.text = "";
+            cleanNum();
         });
 
         this.transform.Find("KeyBord/deleteBtn").GetComponent<Button>().onClick.AddListener(() =>
         {
-            string str = roomNumberInput.text;
-            
-            try
-            {
-                str = str.Remove(str.Length - 1);
-            }
-            catch (System.Exception e)
-            {
-                WantedTextTool.Instance.addTip("请先输入", 0);
-            }
-            roomNumberInput.text = str;
+            if (inputLength > 0)
+                inputLength--;
+            inputLabelList[inputLength].GetComponent<Text>().text = "";
         });
 
         this.transform.Find("BtnConfuseCreate").GetComponent<Button>().onClick.AddListener(() =>
         {
-            if (roomNumberInput.text.Length==6)
+            if (inputLength == 6)
             {
                 transform.GetComponent<EnterRoomScript>().sureRoomNumber();
             }
@@ -102,17 +115,25 @@ public class EnterRoomPage : TTUIPage {
     /// <summary>
     /// 检测数字是否超出范围
     /// </summary>
+    int inputLength = 0; 
     private void inputNum(int num)
     {
-        if (roomNumberInput.text.Length>=6)
+        if (inputLength==6)
         {
-            Debug.Log("超出");
             return;
         }
-        else
+
+        if (inputLength<6)
         {
-            roomNumberInput.text += num;
+            inputLabelList[inputLength].GetComponent<Text>().text = num + "";
+            inputLength++;
         }
+
+        if (inputLength == 6)
+        {
+            transform.GetComponent<EnterRoomScript>().sureRoomNumber();
+            MJUIManager._instance.loadingPage.Active();
+        }        
     }
 
     /// <summary>
@@ -121,7 +142,12 @@ public class EnterRoomPage : TTUIPage {
     /// <returns></returns>
     public string getNumber()
     {
-        return roomNumberInput.text;
+        string input = "";
+        for(int i = 0; i < inputLength; i++)
+        {
+            input += inputLabelList[i].GetComponent<Text>().text;
+        }
+        return input;
     }
 
     /// <summary>
@@ -129,6 +155,17 @@ public class EnterRoomPage : TTUIPage {
     /// </summary>
     private void findView()
     {
-        roomNumberInput = transform.Find("InputRoomNumber").GetComponent<InputField>();
+        Debug.Log(ROOMNUMBERLENGTH);
+        inputLabelList.Clear();
+        inputLength = 0;
+        for (int i = 0; i < ROOMNUMBERLENGTH; i++)
+        {
+            string name = "InputField/Input" + i+ "/Text";
+            Debug.Log(name);
+            inputLabelList.Add(transform.Find(name));
+        }
+        
     }
+
+  
 }

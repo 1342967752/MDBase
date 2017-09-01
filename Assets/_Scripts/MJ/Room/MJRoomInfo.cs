@@ -10,38 +10,12 @@ public class MJRoomInfo : MonoBehaviour {
     void Awake()
     {
         _instance = this;
-    }
-
-    void Start()
-    {
         init();
     }
 
     private void init()
     {
         roomIdText = transform.FindChild("RoomId").GetComponent<TextMesh>();
-        
-        if (GlobalDataScript.reEnterRoomData != null)
-        {
-            //重新进入房间
-            setRoomId(GlobalDataScript.reEnterRoomData.roomId);
-            Debug.Log("重新进入房间");
-        }
-        else
-        {
-            //加入房间
-            if (GlobalDataScript.roomJoinResponseData != null)
-            {
-                setRoomId(GlobalDataScript.roomJoinResponseData.roomId);
-                Debug.Log("加入房间");
-            }
-            else//创建房间
-            {
-                setRoomId(GlobalDataScript.roomVo.roomId);
-                Debug.Log("创建房间");
-            }
-        }
-
     }
 
     /// <summary>

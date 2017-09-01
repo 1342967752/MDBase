@@ -1,33 +1,28 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TinyTeam.UI;
-using System.Collections;
 using DG.Tweening;
+using AssemblyCSharp;
 /// <summary>
 /// 主页面
 /// </summary>
 public class MainMenuPage : TTUIPage {
 
     private Text lblPlayerName;
-    private Image imgPlayer;
+    private Image imgPlayer;//玩家头像
     private Text lblRoomCardNumber;
     private Text lblRoomBroadCast;
     private Transform BtnLeft;
     private Transform BtnRight;
     private Scrollbar scrollPanel;
-    private Transform shaizi0;//麻将图标上的色子
-    private Transform shaizi1;//麻将图标上的色子
-    private Transform pai;//斗地主图标上的纸牌
-    private string headUrl;
     public MainMenuPage() : base(UIType.Normal, UIMode.DoNothing, UICollider.None)
 	{
-        uiPath = MJPath.MainMenuPagePath;
+        uiPath = MyPath.MainMenuPagePath;
     }
 
     public override void Awake(GameObject go)
     {
         MJUIManager._instance.mainMenuPage = this;
-        
         findView();
         setBtnClickListener();
         initAnimation();
@@ -36,11 +31,46 @@ public class MainMenuPage : TTUIPage {
     public override void Refresh()
     {
         initUI();
-        
-        if (SocketEventHandle.getInstance().gameBroadcastNotice==null)
+        addListenner();   
+    }
+
+    //public override void Hide()
+    //{
+    //    gameObject.SetActive(false);
+    //    removeListenner();
+    //}
+
+    /// <summary>
+    /// 添加监听
+    /// </summary>
+    private void addListenner()
+    {
+        if (SocketEventHandle.getInstance().gameBroadcastNotice == null)
         {
             SocketEventHandle.getInstance().gameBroadcastNotice += broadCastResponse;
         }
+
+        if (SocketEventHandle.getInstance().contactInfoResponse == null)
+        {
+            SocketEventHandle.getInstance().contactInfoResponse += contactInfoCallBack;
+        }
+    }
+
+    /// <summary>
+    /// 移除监听
+    /// </summary>
+    private void removeListenner()
+    {
+        if (SocketEventHandle.getInstance().gameBroadcastNotice !=null)
+        {
+            SocketEventHandle.getInstance().gameBroadcastNotice -= broadCastResponse;
+        }
+
+        if (SocketEventHandle.getInstance().contactInfoResponse != null)
+        {
+            SocketEventHandle.getInstance().contactInfoResponse -= contactInfoCallBack;
+        }
+
     }
 
     /// <summary>
@@ -50,21 +80,26 @@ public class MainMenuPage : TTUIPage {
     {
         if (GlobalDataScript.loginResponseData != null)
         {
-            headUrl = GlobalDataScript.loginResponseData.account.headicon;
             setPlayerName(GlobalDataScript.loginResponseData.account.nickname);
             setRoomCardNumber(GlobalDataScript.loginResponseData.account.roomcard);
-
-            if (GlobalDataScript.headSprite == null)
-            {
-                MJUIManager._instance.StartCoroutine(LoadImg());
-            }
-            else
-            {
-                setPlayerHeadImage(GlobalDataScript.headSprite);
-            }
+            setPlayerHeadImage();
+            Debug.Log(GlobalDataScript.loginResponseData.scores);
         }
- 
         GlobalDataScript.isStartGame = false;
+        if (!GlobalDataScript.isShowMainMenuAdPage)
+        {
+            MJUIManager._instance.adPage.showAd();//显示广告
+            GlobalDataScript.isShowMainMenuAdPage = true;
+        }
+    }
+
+    /// <summary>
+    /// 请求更新房卡回调
+    /// </summary>
+    /// <param name="response"></param>
+    private void contactInfoCallBack(ClientResponse response)
+    {
+        MJUIManager._instance.backWindow.setInfo(response.message);
     }
 
     /// <summary>
@@ -73,18 +108,24 @@ public class MainMenuPage : TTUIPage {
     private void findView()
     {
         lblPlayerName = this.transform.Find("TopBar/PersonImage/LabelName").GetComponent<Text>();
-        imgPlayer = this.transform.Find("TopBar/PersonImage/HeadImage").GetComponent<Image>();
+        imgPlayer = this.transform.Find("TopBar/PersonImage/HeadImage/HeadImage").GetComponent<Image>();
         lblRoomCardNumber = this.transform.Find("TopBar/BtnRoomCard/LabelRoomCardNumber").GetComponent<Text>();
         lblRoomBroadCast = this.transform.Find("Broadcast/bg/Text").GetComponent<Text>();
-        shaizi0 = this.transform.Find("MidBar/ScrollerPanel/GameBtns/BtnMaJiang/Image");
-        shaizi1 = this.transform.Find("MidBar/ScrollerPanel/GameBtns/BtnMaJiang/Image1");
-        pai = this.transform.Find("MidBar/ScrollerPanel/GameBtns/BtnDouDiZhu/Image");
         BtnLeft = this.transform.Find("MidBar/BtnLeft");
         BtnRight = this.transform.Find("MidBar/BtnRight");
         scrollPanel = this.transform.Find("MidBar/ScrollerPanel/Scrollbar").GetComponent<Scrollbar>();
         scrollPanel.onValueChanged.AddListener(scrollPanelChanged);
+        imgPlayer.sprite = null;
         BtnLeft.gameObject.SetActive(false);
         BtnRight.gameObject.SetActive(true);
+
+        if (GlobalDataScript.mainMenuState.isChange())
+        {
+            if (GlobalDataScript.mainMenuState.isShowZhanji)
+            {
+                ShowPage<UIZhanJi>();
+            }
+        }
     }
 
     /// <summary>
@@ -123,9 +164,11 @@ public class MainMenuPage : TTUIPage {
         {
             ShowPage<ReturnLoginWantedPage>();
         });
-        transform.Find("TopBar/BtnRoomCard").GetComponent<Button>().onClick.AddListener(() =>
+        transform.Find("TopBar/BtnRoomCard/AddImage").GetComponent<Button>().onClick.AddListener(() =>
         {
-            //添加房卡
+            //请求添加房卡
+            Debug.Log("添加房卡");
+            CustomSocket.getInstance().sendMsg(new GetContactInfoRequest());
         });
         transform.Find("BottomBar/BtnFanKui").GetComponent<Button>().onClick.AddListener(() =>
         {
@@ -163,17 +206,42 @@ public class MainMenuPage : TTUIPage {
         {
             Debug.Log("更多");
         });
+
+        imgPlayer.GetComponent<Button>().onClick.AddListener(() => {
+            MJUIManager._instance.mJMyInfoPage.setInfo(imgPlayer,GlobalDataScript.loginResponseData.account.nickname,GlobalDataScript.loginResponseData.account.id+"",GlobalDataScript.loginResponseData.locationName,GlobalDataScript.loginResponseData.account.uuid,GlobalDataScript.loginResponseData.winTimes,
+                GlobalDataScript.loginResponseData.loseTimes,GlobalDataScript.loginResponseData.drawTimes);
+        });
     }
 
     /// <summary>
     /// 设置头像
     /// </summary>
     /// <param name="sprite"></param>
-    public void setPlayerHeadImage(Sprite sprite)
+    public void setPlayerHeadImage()
     {
-        imgPlayer.overrideSprite = sprite;
+       if (imgPlayer==null)
+       {
+            return;
+       }
+        Debug.Log("加载头像");
+        GameTools.instance.loadSpriteOnNet(loadSpriteCallBack, GlobalDataScript.loginResponseData.account.headicon);
     }
-    
+
+    /// <summary>
+    /// 加载图片回调
+    /// </summary>
+    /// <param name="o"></param>
+    private void loadSpriteCallBack(HttpLoadModel model)
+    {
+        if (model.error!=null)
+        {
+            Debug.Log(model.error);
+            return;
+        }
+        Debug.Log("加载成功");
+        imgPlayer.sprite = model.sprite;
+    }
+
     /// <summary>
     /// 设置名字
     /// </summary>
@@ -197,19 +265,12 @@ public class MainMenuPage : TTUIPage {
     /// </summary>
     private void initAnimation()
     {
-        float shaiziPos;
         broadCastTweener = lblRoomBroadCast.transform.DOLocalMoveX(-lblRoomBroadCast.transform.position.x, 25);
         broadCastTweener.SetAutoKill(false);
+        broadCastTweener.SetLoops(10);
         broadCastTweener.Pause();
-        shaiziSequence = DOTween.Sequence();
-        shaiziPos = shaizi1.transform.position.y;
-        //shaiziSequence.Append(shaizi1.transform.DOMoveY(shaiziPos- 0.1f, 1.0f));
-        shaiziSequence.Append(shaizi1.transform.DOLocalMoveY(shaiziPos + 0.1f, 1.0f));
-        shaiziSequence.PrependInterval(1);
-        shaiziSequence.Play().SetLoops(30);
     }
 
-    Sequence shaiziSequence;
     Tweener broadCastTweener;
     /// <summary>
     /// 设置广播
@@ -228,35 +289,6 @@ public class MainMenuPage : TTUIPage {
         Debug.Log("广播:" + broadcast);
     }
 
-    Texture2D texture2D;
-    /// <summary>
-    ///加载图片
-    /// </summary>
-    /// <returns></returns>
-    IEnumerator LoadImg()
-    {
-        //开始下载图片
-        if (headUrl != null && headUrl != "")
-        {
-            WWW www = new WWW(headUrl);
-            yield return www;
-            //下载完成，保存图片到路径filePath
-            try
-            {
-                texture2D = www.texture;
-                byte[] bytes = texture2D.EncodeToPNG();
-                //将图片赋给场景上的Sprite
-                Sprite tempSp = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), new Vector2(0, 0));
-                GlobalDataScript.headSprite=tempSp;
-                setPlayerHeadImage(tempSp);//设置头像
-            }
-            catch (System.Exception e)
-            {
-                WantedTextTool.Instance.addTip("LoadImg" + e.Message, 0);
-            }
-        }
-    }
-
     /// <summary>
     /// 广播回调
     /// </summary>
@@ -265,5 +297,5 @@ public class MainMenuPage : TTUIPage {
     {
         setBroadCast(response.message);
     }
-
+  
 }

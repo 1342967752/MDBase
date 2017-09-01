@@ -6,16 +6,15 @@ using System.Collections.Generic;
 /// 创建房间page
 /// </summary>
 public class CreateRoomPage : TTUIPage {
-
-    private List<Toggle> wanFaToggleList = new List<Toggle>();
-    private string wanfaString = "标准场/";
+    private ToggleGroup wanfaToggleGroup;
+    private ToggleGroup huitouToggleGroup;
     private ToggleGroup jingPaiToggleGroup;
     private ToggleGroup jingDiaoToggleGroup;
     private ToggleGroup jushuToggleGroup;
 
     public CreateRoomPage() : base(UIType.Fixed, UIMode.HideOther, UICollider.None)
 	{
-        uiPath =MJPath.CreateRoomPagePath;
+        uiPath =MyPath.CreateRoomPagePath;
     }
     
 
@@ -30,16 +29,18 @@ public class CreateRoomPage : TTUIPage {
     /// </summary>
     private void setBtnClickListener()
     {
-        this.transform.Find("BtnBack").GetComponent<Button>().onClick.AddListener(() =>
+        this.transform.Find("Bg/BtnBack").GetComponent<Button>().onClick.AddListener(() =>
         {
             Hide();
         });
         this.transform.Find("BtnConfuseCreate").GetComponent<Button>().onClick.AddListener(() =>
         {
+            string wanfaString = getSuanfa(wanfaToggleGroup);
+            string huitouyixiaoString = getSuanfa(huitouToggleGroup);
             string jingpaiSuanfa = getSuanfa(jingPaiToggleGroup);
             string jingdiaoSuanfa = getSuanfa(jingDiaoToggleGroup);
             string jushuSuanfa = getSuanfa(jushuToggleGroup);
-            string zongSuanfa = wanfaString + jingpaiSuanfa + "/" + jingdiaoSuanfa + "/" + jushuSuanfa + "/";   //归总字符串，	
+            string zongSuanfa = wanfaString+"/"+huitouyixiaoString+"/"+ jingpaiSuanfa + "/" + jingdiaoSuanfa + "/" + jushuSuanfa + "/";   //归总字符串，	
 
             int pvpTime = 8;
             //到这里加一个发送到服务器端的代码
@@ -51,34 +52,26 @@ public class CreateRoomPage : TTUIPage {
             {
                 pvpTime = 16;
             }
-           
+            Debug.Log(zongSuanfa);
             transform.GetComponent<CrateRoomSettingScript>().createNamChangRoom(0, pvpTime, 0, false, true);
+            MJUIManager._instance.loadingPage.Active();
         });
-        foreach (Toggle t in wanFaToggleList)
-        {
-            t.onValueChanged.AddListener(delegate (bool isOn)
-            {
-                wanfaString = "";
-                foreach (Toggle tog in wanFaToggleList)
-                {
-                    if (tog.isOn)
-                    {
-                        wanfaString += tog.transform.Find("Label").GetComponent<Text>().text + "/";
-                        tog.transform.Find("Label").GetComponent<Text>().color = Color.red;
-                    }
-                    else
-                    {
-                        tog.transform.Find("Label").GetComponent<Text>().color = new Color(131 / 255.0f, 95 / 255.0f, 76 / 255.0f);
-                    }
-                }
-                //Debug.Log(wanfaString);
-            });
-        }
         //设置Toggle的字体颜色随选中状态改变
+        //wan fa
+        AddToggleListener(wanfaToggleGroup.transform.Find("BiaoZhunToggle").GetComponent<Toggle>());
+        AddToggleListener(wanfaToggleGroup.transform.Find("ShangXiaFanToggle").GetComponent<Toggle>());
+        AddToggleListener(wanfaToggleGroup.transform.Find("MaiDiLeiToggle").GetComponent<Toggle>());
+        AddToggleListener(wanfaToggleGroup.transform.Find("TongYiShouGeToggle").GetComponent<Toggle>());
+        //hui tou yi xiao
+        AddToggleListener(huitouToggleGroup.transform.Find("YesToggle").GetComponent<Toggle>());
+        AddToggleListener(huitouToggleGroup.transform.Find("NoToggle").GetComponent<Toggle>());
+        //JingPai
         AddToggleListener(jingPaiToggleGroup.transform.Find("SuanFenToggle").GetComponent<Toggle>());
         AddToggleListener(jingPaiToggleGroup.transform.Find("BuSuanFenToggle").GetComponent<Toggle>());
+        //JingDiao
         AddToggleListener(jingDiaoToggleGroup.transform.Find("SuanFenToggle").GetComponent<Toggle>());
         AddToggleListener(jingDiaoToggleGroup.transform.Find("BuSuanFenToggle").GetComponent<Toggle>());
+        //jushu
         AddToggleListener(jushuToggleGroup.transform.Find("8JuToggle").GetComponent<Toggle>());
         AddToggleListener(jushuToggleGroup.transform.Find("16JuToggle").GetComponent<Toggle>());
     }
@@ -125,10 +118,8 @@ public class CreateRoomPage : TTUIPage {
     /// </summary>
     private void findView()
     {
-        wanFaToggleList.Add(transform.Find("WanFaXuanZeGroup/BiaoZhunToggle").GetComponent<Toggle>());
-        wanFaToggleList.Add(transform.Find("WanFaXuanZeGroup/HuiTouYiXiaoToggle").GetComponent<Toggle>());
-        wanFaToggleList.Add(transform.Find("WanFaXuanZeGroup/MaiDiLeiToggle").GetComponent<Toggle>());
-        wanFaToggleList.Add(transform.Find("WanFaXuanZeGroup/TongYiShouGeToggle").GetComponent<Toggle>());
+        wanfaToggleGroup = transform.Find("WanFaXuanZeGroup").GetComponent<ToggleGroup>();
+        huitouToggleGroup = transform.Find("HuiTouYiXiaoGroup").GetComponent<ToggleGroup>();
         jingPaiToggleGroup = transform.Find("JingPaiSuanFaGroup").GetComponent<ToggleGroup>();
         jingDiaoToggleGroup = transform.Find("JingDiaoSuanFaGroup").GetComponent<ToggleGroup>();
         jushuToggleGroup = transform.Find("JuShuXuanZeGroup").GetComponent<ToggleGroup>();

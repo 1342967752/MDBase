@@ -19,9 +19,9 @@ public class MJChiItem : MonoBehaviour {
     /// <param name="minName"></param>
 	public void setCards(string minName)
     {
-        transform.FindChild("1/Image").GetComponent<Image>().sprite= Resources.Load<Sprite>(MJPath.MJBottonSpritePath + minName);
-        transform.FindChild("2/Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJBottonSpritePath + (int.Parse(minName)+1));
-        transform.FindChild("3/Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJBottonSpritePath + (int.Parse(minName) +2));
+        transform.FindChild("1/Image").GetComponent<Image>().sprite= Resources.Load<Sprite>(MyPath.MJBottonSpritePath + minName);
+        transform.FindChild("2/Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJBottonSpritePath + (int.Parse(minName)+1));
+        transform.FindChild("3/Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJBottonSpritePath + (int.Parse(minName) +2));
 
         cardPoint = int.Parse(minName);
     }

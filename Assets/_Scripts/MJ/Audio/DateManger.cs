@@ -52,24 +52,58 @@ public class DateManger : MonoBehaviour {
 		PlayerPrefs.SetFloat("bgmvolume",volume);
 	}
 	public float getBGMVolume(){
+       
 		return PlayerPrefs.GetFloat("bgmvolume", 1.0f);
 	}
 	public void setSoundVolume(float volume){
-		PlayerPrefs.SetFloat("soundvolume", volume);
+        
+       PlayerPrefs.SetFloat("soundvolume", volume);
 	}
 	public float getSoundVolume(){
 		return PlayerPrefs.GetFloat("soundvolume", 1.0f);
 	}
 	public void setBGMState(int state){
-		PlayerPrefs.SetInt("bgmstate",state);
+        PlayerPrefs.SetInt("bgmstate",state);
 	}
 	public int getBGMState(){
 		return PlayerPrefs.GetInt("bgmstate",0);
 	}
 	public void setSoundState(int state){
-		PlayerPrefs.SetInt("soundState",state);
+        PlayerPrefs.SetInt("soundState",state);
 	}
 	public int getSoundState(){
 		return PlayerPrefs.GetInt("soundState");
 	}
+
+    /// <summary>
+    /// 设置是否第一次登陆
+    /// </summary>
+    /// <param name="code">0.第一次 1.不是第一次</param>
+    public void setIsFirstLogin(int code)
+    {
+        PlayerPrefs.SetInt("IsFristLogin", code);
+    }
+
+    public int getIsFirstLogin()
+    {
+        if (!PlayerPrefs.HasKey("IsFristLogin"))
+        {
+            setIsFirstLogin(0);
+        }
+        return PlayerPrefs.GetInt("IsFristLogin");
+    }
+
+    public void setMJRecordSpeed(int speed)
+    {
+        PlayerPrefs.SetInt("MJRecordSpeed", speed);
+    }
+
+    public int getMJRecordSpeed()
+    {
+        if (!PlayerPrefs.HasKey("MJRecordSpeed"))
+        {
+            return 1;
+        }
+        return PlayerPrefs.GetInt("MJRecordSpeed");
+    }
 }

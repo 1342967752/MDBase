@@ -10,7 +10,6 @@ public class LoginSystemScript : MonoBehaviour {
 		CustomSocket.hasStartTimer = false;
         SocketEventHandle.getInstance().LoginCallBack += LoginCallBack;//登录回调
         SocketEventHandle.getInstance().RoomBackResponse += RoomBackResponse;//重新进入房间回调
-		GlobalDataScript.isonLoginPage = true;
         
     }
 	
@@ -29,7 +28,7 @@ public class LoginSystemScript : MonoBehaviour {
 	}
 
 	public void doLogin(){
-		WechatOperateScript.Instance.login ();
+		WechatOperateScript._instance.login ();
 	}
 
     /// <summary>
@@ -38,14 +37,17 @@ public class LoginSystemScript : MonoBehaviour {
     /// <param name="response"></param>
     public void LoginCallBack(ClientResponse response)
     {
+       
         if (response.status == 1)
         {
             Debug.Log("登陆成功");
             GlobalDataScript.loginResponseData = JsonMapper.ToObject<AvatarVO>(response.message);
             ChatSocket.getInstance().sendMsg(new LoginChatRequest(GlobalDataScript.loginResponseData.account.uuid));
+            Debug.Log("发送自己的uuid:" + GlobalDataScript.loginResponseData.account.uuid);
             MJUIManager._instance.closeLoginUI();
+            MJUIManager._instance.loginPage.loginSuccessCallBack();
+            GameTools.instance.sendPos();///获取地理位置
             MJScenesManager.Instance.loadSceneNotAnim("MainMenu");
-            WantedTextTool.Instance.addTip("登录成功",0);
             removeListener();
         }
         else
@@ -64,19 +66,18 @@ public class LoginSystemScript : MonoBehaviour {
     /// </summary>
     /// <param name="response"></param>
 	private void RoomBackResponse(ClientResponse response){
-
+        
 		GlobalDataScript.reEnterRoomData = JsonMapper.ToObject<RoomJoinResponseVo> (response.message);
         for (int i = 0; i < GlobalDataScript.reEnterRoomData.playerList.Count; i++) {
 			AvatarVO itemData =	GlobalDataScript.reEnterRoomData.playerList [i];
 			if (itemData.account.openid == GlobalDataScript.loginResponseData.account.openid) {
-				GlobalDataScript.loginResponseData.account.uuid = itemData.account.uuid;
-                GlobalDataScript.loginResponseData.account.roomcard = itemData.account.roomcard;
+				GlobalDataScript.loginResponseData = itemData;
                 ChatSocket.getInstance ().sendMsg (new LoginChatRequest(GlobalDataScript.loginResponseData.account.uuid));
 				break;
 			}
 		}
-        
         MJScenesManager.Instance.loadSceneNotAnim("MaJiang");
-        removeListener ();
-	}
+        GameTools.instance.sendPos();///获取地理位置
+        removeListener();
+	} 
 }

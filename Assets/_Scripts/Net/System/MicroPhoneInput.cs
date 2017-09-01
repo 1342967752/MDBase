@@ -14,45 +14,53 @@ public class MicroPhoneInput : MonoBehaviour {
 	private static MicroPhoneInput m_instance;  
 
 	public float sensitivity=100;  
-	public float loudness=0;  
+	public float loudness=0;
+    private float talkTimer = 0;
+    private bool isStartRecord = false;
+    public int getPostionTime = 5000;//Microphone.GetPosition(null)次数
 
-	private AudioSource playAudio;
-
-	private static string[] micArray=null;  
+    private static string[] micArray=null;  
 
 	const int HEADER_SIZE = 44;  
 
 	const int RECORD_TIME = 10;  
 	List<int> userList;
 	private AudioClip redioclip;
+    private static bool isCanUse = true;
+   
 
 	void Start () {  
 		SocketEventHandle.getInstance ().micInputNotice += micInputNotice;
-        playAudio = GameObject.Find("GamePlayAudio").GetComponent<AudioSource>();
-        if (playAudio.clip == null) {
-			playAudio.clip = AudioClip.Create("playRecordClip", 160000, 1, 8000, false, false);  
-		}
 	}  
+
+    void Update()
+    {
+        if (isStartRecord)
+        {
+            talkTimer += Time.deltaTime;
+        }
+    }
 
 	public static MicroPhoneInput getInstance()  
 	{  
 		if (m_instance == null)   
-		{  
+		{
+            Application.RequestUserAuthorization(UserAuthorization.Microphone);
 			micArray = Microphone.devices;  
-			if (micArray.Length == 0)  
-			{  
-				Debug.LogError ("Microphone.devices is null");  
-			}  
+			
 			foreach (string deviceStr in Microphone.devices)  
 			{  
-				Debug.Log("device name = " + deviceStr);  
+				Debug.Log("device name = " + deviceStr);
+                isCanUse = true;
 			}  
 			if(micArray.Length==0)  
 			{  
-				Debug.LogError("no mic device");  
-			}  
+				Debug.LogError("no mic device");
+                WantedTextTool.Instance.addTip("语音不可用", 1);
+                isCanUse = false;
+            }
 
-			GameObject MicObj=new GameObject("MicObj");  
+            GameObject MicObj=new GameObject("MicObj");  
 			m_instance= MicObj.AddComponent<MicroPhoneInput>();  
 		}  
 		return m_instance;  
@@ -60,6 +68,10 @@ public class MicroPhoneInput : MonoBehaviour {
 		
 	public void StartRecord(List<int> _userList)  
 	{  
+        if (!isCanUse)
+        {
+            return;
+        }
 		userList = _userList;
 		GetComponent<AudioSource>().Stop();  
 		if (micArray.Length == 0)  
@@ -67,19 +79,33 @@ public class MicroPhoneInput : MonoBehaviour {
 			Debug.Log("No Record Device!");  
 			return;  
 		}  
-		//GetComponent<AudioSource>().loop = false;  
-		GetComponent<AudioSource>().mute = true;  
-		redioclip = Microphone.Start("inputMicro", false, RECORD_TIME, 8000); //22050    
-		while (!(Microphone.GetPosition(null)>0)) {  
+		GetComponent<AudioSource>().mute = true;
+        Microphone.End("inputMicro");
+		redioclip = Microphone.Start("inputMicro", false, RECORD_TIME, 8000); //22050   //
+        int time = 0;
+        while (!(Microphone.GetPosition(null)>0)) {
+            time++;
+            if (time>getPostionTime)
+            {
+                WantedTextTool.Instance.addTip("本机麦克风不可用", 1);
+                isCanUse = false;
+                return;
+            }
 		}  
-	//	GetComponent<AudioSource>().Play ();  
-		Debug.Log("StartRecord");  
-		//倒计时   
-		//StartCoroutine(TimeDown());  
+		Debug.Log("StartRecord");
+        talkTimer = 0;
+        isStartRecord = true; 
 	}  
 
 	public  void StopRecord()  
-	{  
+	{
+        if (!isCanUse)
+        {
+            return;
+        }
+
+        isStartRecord = false;
+
 		Debug.Log("StopRecord");  
 		if (micArray.Length == 0)  
 		{  
@@ -104,7 +130,7 @@ public class MicroPhoneInput : MonoBehaviour {
 			return null;   
 		}  
 
-		float[] samples = new float[GetComponent<AudioSource>().clip.samples];  
+		float[] samples = new float[(int)(8000*talkTimer)+1];  
 		Debug.Log ("samples.Length = "+samples.Length);
 		GetComponent<AudioSource>().clip.GetData(samples, 0);  
 
@@ -145,12 +171,9 @@ public class MicroPhoneInput : MonoBehaviour {
 		for (int i = 0; i < intArr.Length; i++)  
 		{  
 			samples[i] = (float)intArr[i] / rescaleFactor;  
-		}  
-			
-		playAudio.clip.SetData(samples, 0);
-        GlobalDataScript.talkingTime = playAudio.clip.length;//设置语音长度 
-		playAudio.mute = false;  
-		playAudio.Play();  
+		}
+        Debug.Log("语音长度:" + samples.Length);
+        GlobalDataScript.talkingInfos.Add(samples);
 	}
 
 	private void PlayRecord()  
@@ -219,6 +242,7 @@ public class MicroPhoneInput : MonoBehaviour {
 			PlayClipData(arr);
 		}
 	}
+
 	//save to localhost
 	public bool Save(string filename) {  
 		Debug.Log("Application.persistentDataPath = "+Application.persistentDataPath);  

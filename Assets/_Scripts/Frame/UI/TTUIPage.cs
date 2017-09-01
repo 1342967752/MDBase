@@ -367,7 +367,8 @@
 
         private static void HideOldNodes()
         {
-            if (m_currentPageNodes.Count < 0) return;
+            if (m_currentPageNodes==null||m_currentPageNodes.Count < 0) return;
+            ClearEmptyNode();
             TTUIPage topPage = m_currentPageNodes[m_currentPageNodes.Count - 1];
             if (topPage.mode == UIMode.HideOther)
             {
@@ -376,6 +377,31 @@
                 {
                     if(m_currentPageNodes[i].isActive())
                         m_currentPageNodes[i].Hide();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 清除空的节点
+        /// </summary>
+        private static void ClearEmptyNode()
+        {
+            if (m_currentPageNodes==null||m_currentPageNodes.Count==0)
+            {
+                return;
+            }
+
+            //清除空的节点
+            for (int i = 0; i < m_currentPageNodes.Count; i++)
+            {
+                if (m_currentPageNodes[i].gameObject == null)
+                {
+                    m_currentPageNodes.RemoveAt(i);
+                    if (m_allPages.ContainsKey(m_currentPageNodes.ToString()))
+                    {
+                        m_allPages.Remove(m_currentPageNodes.ToString());
+                    }
+                    
                 }
             }
         }

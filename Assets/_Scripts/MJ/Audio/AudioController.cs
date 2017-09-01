@@ -29,6 +29,7 @@ public class AudioController : MonoBehaviour {
     }
 	private AudioSource BGMAudioSource;
 	private AudioSource SoundAudioSource;
+    
 	public BGMState bgmState;
 	public SoundState soundState;
 
@@ -36,11 +37,13 @@ public class AudioController : MonoBehaviour {
 		BGMAudioSource = this.gameObject.AddComponent<AudioSource>();
 		BGMAudioSource.loop = true;
 		SoundAudioSource = this.gameObject.AddComponent<AudioSource>();
-		bgmState = (BGMState)DateManger.Instance.getBGMState();
+       
+        bgmState = (BGMState)DateManger.Instance.getBGMState();
 		soundState = (SoundState)DateManger.Instance.getSoundState();
 		setBGMVolume(DateManger.Instance.getBGMVolume());
 		setSoundVolume(DateManger.Instance.getSoundVolume());
 	}
+
 	/*********设置背景音乐音量**********/
 	public void setBGMVolume(float volume){
 		BGMAudioSource.volume = volume;
@@ -56,6 +59,7 @@ public class AudioController : MonoBehaviour {
 		SoundAudioSource.volume = volume;
 		DateManger.Instance.setSoundVolume(volume);
 	}
+
 	public float getSoundVolume(){
 		return SoundAudioSource.volume;
 	}
@@ -144,11 +148,16 @@ public class AudioController : MonoBehaviour {
         {
             s = "boy/";
         }
-        else
+        else if(sex==2)
         {
             s = "gril/";
         }
-		playSoundByName(MJPath.MJAudioPath +s+ pathAndName, 1.0f);
+        else//无其他类型默认男生
+        {
+            s = "boy/";
+        }
+
+		playSoundByName(MyPath.MJAudioPath +s+ pathAndName, 1.0f);
 	}
 
 	private void playSoundByName(string pathAndName, float volume)
@@ -163,6 +172,7 @@ public class AudioController : MonoBehaviour {
                 }
 				SoundAudioSource.volume = volume;
 				SoundAudioSource.PlayOneShot(objPrefab);
+                Debug.Log("播放:" + pathAndName);
                
 			}catch(System.Exception e){
 				Debug.Log("AudioController------>:" + e.ToString());
@@ -173,7 +183,7 @@ public class AudioController : MonoBehaviour {
 	/*****根据音乐的路径和名字播放******/
 	public void playBGMByName(string Name)
 	{
-		playBGMByName(MJPath.MJAudioPath+Name, 1.0f);
+		playBGMByName(MyPath.MJAudioPath+Name, 1.0f);
 	}
 
 	public void playBGMByName(string Name, float volume)
@@ -214,4 +224,5 @@ public class AudioController : MonoBehaviour {
 		}
 	}
 
+   
 }

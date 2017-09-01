@@ -7,6 +7,7 @@ using System.Collections.Generic;
 /// </summary>
 public class MJQuitRoomPage : TTUIPage {
     private GameObject bg01;//退出房间界面、
+    private Text bg01Text;
     private GameObject bg02;//请求申请退出房间界面
     private GameObject bg03;//申请退出房间界面
 
@@ -19,7 +20,7 @@ public class MJQuitRoomPage : TTUIPage {
 
 	public MJQuitRoomPage() : base(UIType.PopUp, UIMode.DoNothing, UICollider.None)
     {
-        uiPath = MJPath.MJQuitRoomPagePath;
+        uiPath = MyPath.MJQuitRoomPagePath;
     }
 
     public override void Awake(GameObject go)
@@ -28,8 +29,7 @@ public class MJQuitRoomPage : TTUIPage {
         init();
     }
 
-    
-
+   
     void init()
     {
         players.Clear();
@@ -39,6 +39,7 @@ public class MJQuitRoomPage : TTUIPage {
 
         transform.FindChild("Bg01/OK").GetComponent<Button>().onClick.AddListener(bg01OKOnClick);
         transform.FindChild("Bg01/Cancel").GetComponent<Button>().onClick.AddListener(bg01CancelClick);
+        bg01Text= bg01.transform.FindChild("Info").GetComponent<Text>();
 
         transform.FindChild("Bg02/OK").GetComponent<Button>().onClick.AddListener(bg02OkOnClick);
         transform.FindChild("Bg02/Cancel").GetComponent<Button>().onClick.AddListener(bg01CancelClick);
@@ -56,6 +57,15 @@ public class MJQuitRoomPage : TTUIPage {
             bg03.transform.FindChild("player/" + i + "/select").gameObject.SetActive(false);
             bg03.transform.FindChild("player/" + i + "/wait").gameObject.SetActive(true);
         }
+
+       if (GlobalDataScript.isRecord)
+       {
+            bg01Text.text = MyName.QuitRecord;
+        }
+        else
+        {
+            bg01Text.text = MyName.QuitRoomNoVote;
+        }
     }
 
     #region bg01
@@ -67,8 +77,16 @@ public class MJQuitRoomPage : TTUIPage {
 
     private void bg01OKOnClick()
     {
+        if (GlobalDataScript.isRecord)
+        {
+            MJScenesManager.Instance.loadSceneNotAnim(SceneName.MainMenu);
+            GlobalDataScript.reinitData();
+            return;
+        }
+
         GameObject.Find("init").GetComponent<MyMahjongScript>().quiteRoom();
         ClosePage<MJQuitRoomPage>();
+        MJUIManager._instance.loadingPage.Active();
     }
 
     private void bg01CancelClick()
@@ -136,7 +154,7 @@ public class MJQuitRoomPage : TTUIPage {
             {
                 temp.SetActive(true);
                 temp.transform.parent.FindChild("wait").gameObject.SetActive(false);
-                temp.GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJSpritePath+"Quit/ok");
+                temp.GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJSpritePath+"Quit/ok");
                 bg03Title.text ="["+ MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.nickname+ "]" + "发起投票解散对局";
             }
         }
@@ -155,7 +173,7 @@ public class MJQuitRoomPage : TTUIPage {
         }
         players[index].transform.FindChild("wait").gameObject.SetActive(false);
         players[index].transform.FindChild("select").gameObject.SetActive(true);
-        players[index].transform.FindChild("select").GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJSpritePath + "Quit/" + (isVote ? "ok" : "cancel"));
+        players[index].transform.FindChild("select").GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJSpritePath + "Quit/" + (isVote ? "ok" : "cancel"));
     }
     #endregion
     /// <summary>
@@ -168,6 +186,9 @@ public class MJQuitRoomPage : TTUIPage {
         bg03.SetActive(false);
     }
 
+    /// <summary>
+    /// 关闭ui
+    /// </summary>
     public void close()
     {
         ClosePage<MJQuitRoomPage>();

@@ -16,7 +16,7 @@ namespace AssemblyCSharp
 		public int uuid;
 		private List<int> maPonits;
         public int huScore;//胡的分数
-        public int jingScore;
+        public int jingScore;//精分
 		
 
 		public void setMaPoints(List<int> mas){

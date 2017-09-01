@@ -9,6 +9,7 @@ public class MJUIManager : MonoBehaviour {
 
 
     //页面
+    private LoginPage _loginPage;
     public MJDeskPage mJDeskPage;
     public MainMenuPage mainMenuPage;
     private EnterRoomPage _enterRoomPage;
@@ -16,8 +17,33 @@ public class MJUIManager : MonoBehaviour {
     private MJDanJIeSuan _mJDanJIeSuan;
     private MJZongJieSuan _mJZongJieSuan;
     private ReloginUIPage _reloginUIPage;
+    private ReturnLoginWantedPage _returnLoginWantedPage;
+    private LoadingPage _loadingPage;
+    public ExitGamePage _exitGamePage;
+    private MJMyInfoPage _mJMyInfoPage;
+    private UIZhanJi _uIZhanJi;
+    private UIZhanJiXiangQing _uIZhanJiXiangQing;
+    private AdPage _adPage;
+    private BackWindow _backWindow;
 
     public UnityAction<bool, GameObject> switchButtonListener;
+
+    public LoginPage loginPage
+    {
+        get
+        {
+            if (_loginPage == null || !_loginPage.isActive())
+            {
+                TTUIPage.ShowPage<LoginPage>();
+            }
+            return _loginPage;
+        }
+
+        set
+        {
+            _loginPage = value;
+        }
+    }
 
     public MJDanJIeSuan mJDanJIeSuan
     {
@@ -104,6 +130,124 @@ public class MJUIManager : MonoBehaviour {
         }
     }
 
+    public ReturnLoginWantedPage returnLoginWantedPage
+    {
+        get
+        {
+            if (_returnLoginWantedPage==null||!_returnLoginWantedPage.isActive())
+            {
+                TTUIPage.ShowPage<ReturnLoginWantedPage>();
+            }
+            return _returnLoginWantedPage;
+        }
+
+        set
+        {
+            _returnLoginWantedPage = value;
+        }
+    }
+
+    public MJMyInfoPage mJMyInfoPage
+    {
+        get
+        {
+            if (_mJMyInfoPage==null||!_mJMyInfoPage.isActive())
+            {
+                TTUIPage.ShowPage<MJMyInfoPage>();
+            }
+            return _mJMyInfoPage;
+        }
+
+        set
+        {
+            _mJMyInfoPage = value;
+        }
+    }
+
+    public UIZhanJi uiZhanJi
+    {
+        get
+        {
+            if (_uIZhanJi==null||!_uIZhanJi.isActive())
+            {
+                TTUIPage.ShowPage<UIZhanJi>();
+            }
+            return _uIZhanJi;
+        }
+
+        set
+        {
+            _uIZhanJi = value;
+        }
+    }
+
+    public LoadingPage loadingPage
+    {
+        get
+        {
+            if (_loadingPage==null)
+            {
+                TTUIPage.ShowPage<LoadingPage>();
+            }
+            return _loadingPage;
+        }
+
+        set
+        {
+            _loadingPage = value;
+        }
+    }
+    
+    public UIZhanJiXiangQing uIZhanJiXiangQing
+    {
+        get
+        {
+            if (_uIZhanJiXiangQing==null||!_uIZhanJiXiangQing.isActive())
+            {
+                TTUIPage.ShowPage<UIZhanJiXiangQing>();
+            }
+            return _uIZhanJiXiangQing;
+        }
+
+        set
+        {
+            _uIZhanJiXiangQing = value;
+        }
+    }
+
+    public AdPage adPage
+    {
+        get
+        {
+            if (_adPage == null || !_adPage.isActive())
+            {
+                TTUIPage.ShowPage<AdPage>();
+            }
+            return _adPage;
+        }
+
+        set
+        {
+            _adPage = value;
+        }
+    }
+
+    public BackWindow backWindow
+    {
+        get
+        {
+            if (_backWindow==null||!_backWindow.isActive())
+            {
+                TTUIPage.ShowPage<BackWindow>();
+            }
+            return _backWindow;
+        }
+
+        set
+        {
+            _backWindow = value;
+        }
+    }
 
     void Awake()
     {
@@ -119,9 +263,25 @@ public class MJUIManager : MonoBehaviour {
         StartCoroutine(sendHeart());
     }
 
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (_exitGamePage==null||!_exitGamePage.isActive())
+            {
+                TTUIPage.ShowPage<ExitGamePage>();
+            }
+            else
+            {
+                TTUIPage.ClosePage<ExitGamePage>();
+            }
+               
+        }
+    }
+
     private void init()
     {
-        if (SceneManager.GetActiveScene().name.Equals(SceneName.MaJiang))
+        if (SceneManager.GetActiveScene().name.Equals(SceneName.MaJiang)||SceneManager.GetActiveScene().name.Equals(SceneName.MaJiangRecord))
         {
             TTUIPage.ShowPage<MJDeskPage>();
         }else if (SceneManager.GetActiveScene().name.Equals(SceneName.Login))
@@ -158,4 +318,5 @@ public class MJUIManager : MonoBehaviour {
             CustomSocket.getInstance().sendHeadData();
         }
     }
+
 }

@@ -10,6 +10,8 @@ public class MJCardsManager : MonoBehaviour {
 
     public static MJCardsManager _instance;
     public JingResponse jingPai;
+    private bool isFaPai = false;
+    private bool isRecord = false;
 
     void Awake()
     {
@@ -30,16 +32,17 @@ public class MJCardsManager : MonoBehaviour {
         bottonCurrentSelectArea = transform.FindChild("botton/CurrentSelectArea");//获取零时选择牌区域
  
 
-        bottonOutCardArea = GameObject.Find(MJPath.MJOutCardAreaPath + MJName.BottonName).GetComponent<MJOutCardArea>();
-        bottonHandCardArea = GameObject.Find(MJPath.MJHandCardPath + MJName.BottonName).GetComponent<MJHandCardArea>();
-        leftOutCardArea = GameObject.Find(MJPath.MJOutCardAreaPath + MJName.LeftName).GetComponent<MJOutCardArea>();
-        leftHandCardArea = GameObject.Find(MJPath.MJHandCardPath + MJName.LeftName).GetComponent<MJHandCardArea>();
-        rightOutCardArea = GameObject.Find(MJPath.MJOutCardAreaPath + MJName.RightName).GetComponent<MJOutCardArea>();
-        rightHandCardArea = GameObject.Find(MJPath.MJHandCardPath + MJName.RightName).GetComponent<MJHandCardArea>();
-        topOutCardArea = GameObject.Find(MJPath.MJOutCardAreaPath + MJName.TopName).GetComponent<MJOutCardArea>();
-        topHandCardArea = GameObject.Find(MJPath.MJHandCardPath + MJName.TopName).GetComponent<MJHandCardArea>();
+        bottonOutCardArea = GameObject.Find(MyPath.MJOutCardAreaPath + MyName.BottonName).GetComponent<MJOutCardArea>();
+        bottonHandCardArea = GameObject.Find(MyPath.MJHandCardPath + MyName.BottonName).GetComponent<MJHandCardArea>();
+        leftOutCardArea = GameObject.Find(MyPath.MJOutCardAreaPath + MyName.LeftName).GetComponent<MJOutCardArea>();
+        leftHandCardArea = GameObject.Find(MyPath.MJHandCardPath + MyName.LeftName).GetComponent<MJHandCardArea>();
+        rightOutCardArea = GameObject.Find(MyPath.MJOutCardAreaPath + MyName.RightName).GetComponent<MJOutCardArea>();
+        rightHandCardArea = GameObject.Find(MyPath.MJHandCardPath + MyName.RightName).GetComponent<MJHandCardArea>();
+        topOutCardArea = GameObject.Find(MyPath.MJOutCardAreaPath + MyName.TopName).GetComponent<MJOutCardArea>();
+        topHandCardArea = GameObject.Find(MyPath.MJHandCardPath + MyName.TopName).GetComponent<MJHandCardArea>();
         bottonAddCardAreaInitPos = bottonHandCardArea.transform.localPosition;//记录底部玩家添加牌区域初始位置
 
+        isRecord = GlobalDataScript.isRecord;
     }
 
     #endregion
@@ -98,15 +101,45 @@ public class MJCardsManager : MonoBehaviour {
     }
 
     /// <summary>
+    /// 移除一张手牌
+    /// </summary>
+    public void bottonRemoveHandCardByName(string name)
+    {
+        if (bottonHandCards==null||bottonHandCards.Count==0)
+        {
+            return;
+        }
+
+        for (int i=0;i<bottonHandCards.Count;i++)
+        {
+            if (bottonHandCards[i].gameObject.name.Equals(name))
+            {
+                Debug.Log("移除一张手牌:" + name);
+                Destroy(bottonHandCards[i].gameObject);
+                bottonHandCards[i] = null;
+                MJCardAction.Instance.removeEmpty(bottonHandCards, bottonHandCardsPos);
+                return;
+            }
+        }
+       
+    }
+
+    /// <summary>
     /// 从牌里摸牌
     /// </summary>
     /// <param name="name"></param>
-    private void bottonAddCard(string name)
+    public void bottonAddCard(string name)
     {
-        if (!MJCard.canDrag)
+        if (int.Parse(name)<0)
+        {
+            return;
+        }
+
+        if (!MJCard.canDrag||bottonIsGang||bottonHandCards.Count==0)
         {
             //延时摸牌
-            BottonAddCardPoint = int.Parse(name);
+            bottonAddCardPoint = int.Parse(name);
+            Debug.Log("延时添加牌:" + bottonAddCardPoint);
             StartCoroutine(dealyAddCard());
             Debug.Log("延时加牌开始");
             return;
@@ -121,19 +154,19 @@ public class MJCardsManager : MonoBehaviour {
 
         //产生一张牌
         bottonAdjustAddCardPos();
-        GameObject temp = Instantiate(Resources.Load<GameObject>(MJPath.MJCardPath));
+        GameObject temp = Instantiate(Resources.Load<GameObject>(MyPath.MJCardPath));
         temp.name = name;
         temp.transform.FindChild("Image").GetComponent<Image>().sprite = getSpriteByName(name);
         temp.transform.SetParent(bottonAddCardArea.transform);
         temp.transform.localPosition = Vector3.zero;
         temp.transform.localScale = Vector3.one;
-        temp.name = name;
         temp.AddComponent<MJCard>();
         temp.GetComponent<MJCard>().weight = int.Parse(name);//设置牌的权值
 
         //设置牌的类型
         if (jingPai==null)
         {
+            Debug.Log("无精牌数据");
             return;
         }
 
@@ -157,7 +190,7 @@ public class MJCardsManager : MonoBehaviour {
         Debug.Log("添加牌类型:" + (int)temp.GetComponent<MJCard>().cardtype);
     }
 
-    int BottonAddCardPoint = -1;
+    int bottonAddCardPoint = -1;
     /// <summary>
     /// 延时摸牌
     /// </summary>
@@ -167,10 +200,10 @@ public class MJCardsManager : MonoBehaviour {
         
         while (true)
         {
-            if (MJCard.canDrag)
+            if (MJCard.canDrag && !bottonIsGang && isFaPai)
             {
-                Debug.Log("延时加牌成功");
-                addCard(DirectionEnum.Bottom, BottonAddCardPoint + "");
+                Debug.Log("延时加牌成功:"+ bottonAddCardPoint);
+                addCard(DirectionEnum.Bottom, bottonAddCardPoint + "");
                 
                 break;
             }
@@ -202,12 +235,13 @@ public class MJCardsManager : MonoBehaviour {
         {
             return;
         }
-        Image botton = Resources.Load<Image>(MJPath.MJCardPath);//加载卡片
+
+        Image botton = Resources.Load<Image>(MyPath.MJCardPath);//加载卡片
         //产生位置
         createPostion(0, botton.rectTransform.sizeDelta.x - 3, bottonHandCardsPos);
-        int count = cardsName.Count > 13 ? 13 : cardsName.Count;
+       
         //产生卡片
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < cardsName.Count; i++)
         {
             bottonHandCards.Add(Instantiate(botton));
             bottonHandCards[i].transform.SetParent(bottonHandCardContent.transform);
@@ -243,10 +277,12 @@ public class MJCardsManager : MonoBehaviour {
                 bottonHandCards[i].transform.FindChild("Jing").gameObject.SetActive(false);
             }
         }
+        Debug.Log("创建手牌:" + cardsName.Count + "张");
         //排序
         sort(bottonHandCards);
         //放置卡片
         putCards(bottonHandCards, bottonHandCardsPos);
+        isFaPai = true;
     }
 
     /// <summary>
@@ -258,7 +294,7 @@ public class MJCardsManager : MonoBehaviour {
     {
         Debug.Log("碰：" + peng + "|" + "杠" + gang);
         MJCard.canDrag = false;
-        bottonHandCardContent.transform.DOLocalMoveX((bottonHandCardContent.transform.localPosition.x + 2 *peng* MJSize.CardSize2D.x+ bottonHandCardContent.transform.localPosition.x + 3 * gang * MJSize.CardSize2D.x), 0.5f).OnComplete(bottonAnimCompleteCallBack);
+        bottonHandCardContent.transform.DOLocalMoveX((bottonHandCardContent.transform.localPosition.x + 2 *peng* MySize.CardSize2D.x+ bottonHandCardContent.transform.localPosition.x + 3 * gang * MySize.CardSize2D.x), 0.5f).OnComplete(bottonAnimCompleteCallBack);
     }
 
     /// <summary>
@@ -321,7 +357,7 @@ public class MJCardsManager : MonoBehaviour {
     /// <returns></returns>
     private Sprite getSpriteByName(string name)
     {
-        return Resources.Load<Sprite>(MJPath.MJBottonSpritePath + name);
+        return Resources.Load<Sprite>(MyPath.MJBottonSpritePath + name);
     }
 
     /// <summary>
@@ -406,6 +442,11 @@ public class MJCardsManager : MonoBehaviour {
     /// </summary>
     public void bottonOutCard()
     {
+        if (isRecord)
+        {
+            return;
+        }
+
         Image outCard = getSelectCard();
         if (bottonHandCards.Contains(outCard))
         { 
@@ -416,6 +457,43 @@ public class MJCardsManager : MonoBehaviour {
         AudioController.Instance.playSoundByName(outCard.gameObject.name, MJPlayerManager._instance.getSexByIndex(MJPlayerManager._instance.getMyIndex()));
         GameObject.Find("init").GetComponent<MyMahjongScript>().outCardRequest(int.Parse(outCard.gameObject.name));//出牌请求
         Destroy(outCard.gameObject);
+    }
+
+    public void bottonOutCard(string cardPoint)
+    {
+        selectCard(cardPoint);
+        Image outCard = getSelectCard();
+        if (bottonHandCards.Contains(outCard))
+        {
+            bottonHandCards[bottonHandCards.IndexOf(outCard)] = null;
+            bottonAddcardInsertHand();
+        }
+        bottonOutCardArea.outCard(outCard.gameObject.name);
+        AudioController.Instance.playSoundByName(outCard.gameObject.name, MJPlayerManager._instance.getSexByIndex(MJPlayerManager._instance.getMyIndex()));
+        Destroy(outCard.gameObject);
+    }
+
+    /// <summary>
+    /// 选择相应点数的牌
+    /// </summary>
+    /// <param name="cardPoint"></param>
+    public void selectCard(string cardPoint)
+    {
+        if (bottonHandCards==null||bottonHandCards.Count<=0)
+        {
+            return;
+        }
+
+        for (int i=0;i<bottonHandCards.Count;i++)
+        {
+            if (bottonHandCards[i].gameObject.name.Equals(cardPoint))
+            {
+                setSelectCard(bottonHandCards[i]);
+                return;
+            }
+        }
+
+        setSelectCard(getBottonAddCard());
     }
 
     /// <summary>
@@ -436,8 +514,16 @@ public class MJCardsManager : MonoBehaviour {
         MJCardAction.Instance.removeCards(bottonHandCards, name,bottonHandCardsPos,2);
         bottonHandCardArea.pengCard(name);
         MJCard.canDrag = false;
-        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 2*MJSize.CardSize2D.x,0.5f).OnComplete(bottonAnimCompleteCallBack);
+        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 2*MySize.CardSize2D.x,0.5f).OnComplete(bottonAnimCompleteCallBack);
+    }
 
+    /// <summary>
+    /// 返回游戏碰牌
+    /// </summary>
+    private void bottonReturnPengCard(string name)
+    {
+        MJCardAction.Instance.removeCards(bottonHandCards, name, bottonHandCardsPos, 3);
+        bottonHandCardArea.pengCard(name);
     }
 
     /// <summary>
@@ -452,11 +538,42 @@ public class MJCardsManager : MonoBehaviour {
         removeSelectCard();
         MJCardAction.Instance.removeCards(bottonHandCards, one, bottonHandCardsPos,1);
         MJCardAction.Instance.removeCards(bottonHandCards, two, bottonHandCardsPos,1);
-        bottonHandCardArea.chiCard(min);
+        bottonHandCardArea.chiCard(min,one,two);
         MJCard.canDrag = false;
-        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 2* MJSize.CardSize2D.x, 0.5f).OnComplete(bottonAnimCompleteCallBack);
+        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 2* MySize.CardSize2D.x, 0.5f).OnComplete(bottonAnimCompleteCallBack);
     }
 
+    /// <summary>
+    /// 返回游戏吃牌
+    /// </summary>
+    /// <param name="chicards"></param>
+    private void bottonReturnChiCard(List<int> chiCards)
+    {
+        if (chiCards.Count!=3)
+        {
+            return;
+        }
+
+        MJCardAction.Instance.removeCards(bottonHandCards, chiCards[0]+"", bottonHandCardsPos, 1);
+        MJCardAction.Instance.removeCards(bottonHandCards, chiCards[1] + "", bottonHandCardsPos, 1);
+        MJCardAction.Instance.removeCards(bottonHandCards, chiCards[2] + "", bottonHandCardsPos, 1);
+
+        int minPoint = 0;
+        if (chiCards[0]<chiCards[1]&&chiCards[0]<chiCards[2])
+        {
+            minPoint = chiCards[0];
+        }else if (chiCards[1] < chiCards[0] && chiCards[1] < chiCards[2])
+        {
+            minPoint = chiCards[1];
+        }
+        else
+        {
+            minPoint = chiCards[2];
+        }
+        bottonHandCardArea.chiCard(minPoint+"",chiCards[0]+"", chiCards[1]+"");
+    }
+
+    bool bottonIsGang = false;
     /// <summary>
     /// 杠牌
     /// </summary>
@@ -467,8 +584,6 @@ public class MJCardsManager : MonoBehaviour {
         removeSelectCard();
         if (getBottonAddCard()!=null)
         {
-            MJCard.canDrag = false;
-            Invoke("bottonAnimCompleteCallBack", 0.6f);
             Destroy(getBottonAddCard().gameObject);
         }
         
@@ -482,9 +597,22 @@ public class MJCardsManager : MonoBehaviour {
 
         bottonHandCardArea.gangCard(name, isAn);
         MJCard.canDrag = false;
-        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 3 * MJSize.CardSize2D.x, 0.5f).OnComplete(bottonAnimCompleteCallBack);
+        bottonIsGang = true;
+        Debug.Log("杠牌开始");
+        bottonHandCardContent.transform.DOLocalMoveX(bottonHandCardContent.transform.localPosition.x + 3 * MySize.CardSize2D.x, 0.3f);
+        Invoke("bottonAnimGangCompleteCallBack", 0.6f);
     }
 
+    /// <summary>
+    /// 重连 杠牌
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="isAn"></param>
+    private void bottonReturnGangCard(string name,bool isAn)
+    {
+        MJCardAction.Instance.removeCards(bottonHandCards, name, bottonHandCardsPos, 4);//四代表最大移除四张牌
+        bottonHandCardArea.gangCard(name, isAn);
+    }
     /// <summary>
     /// 胡牌
     /// </summary>
@@ -502,6 +630,14 @@ public class MJCardsManager : MonoBehaviour {
     private void bottonAnimCompleteCallBack()
     {
         MJCard.canDrag = true;
+        Debug.Log("普通动画回调");
+    }
+
+    private void bottonAnimGangCompleteCallBack()
+    {
+        MJCard.canDrag = true;
+        bottonIsGang = false;
+        Debug.Log("杠牌动画回调");
     }
 
     /// <summary>
@@ -522,6 +658,7 @@ public class MJCardsManager : MonoBehaviour {
         bottonUIReset();
         bottonOutCardArea.reSet();
         bottonHandCardArea.reSet();
+        isFaPai = false;
     }
 
     /// <summary>
@@ -606,9 +743,14 @@ public class MJCardsManager : MonoBehaviour {
     /// <summary>
     /// 初始化手牌
     /// </summary>
-    public void initLeftHandCard()
+    public void initLeftHandCard(List<string> names)
     {
-        leftHandCardArea.createHandCards();
+        if (names==null)
+        {
+            leftHandCardArea.createHandCards();
+            return;
+        }
+        leftHandCardArea.createHandCards(names);
     }
 
     /// <summary>
@@ -626,7 +768,7 @@ public class MJCardsManager : MonoBehaviour {
     public void leftOutCard(string name)
     {
         leftOutCardArea.outCard(name);
-        leftHandCardArea.outCard();
+        leftHandCardArea.outCard(name);
     }
 
     /// <summary>
@@ -665,9 +807,9 @@ public class MJCardsManager : MonoBehaviour {
     /// 吃牌
     /// </summary>
     /// <param name="minName"></param>
-    private void leftChiCard(string minName)
+    private void leftChiCard(string minName,string one,string two)
     {
-        leftHandCardArea.chiCard(minName);
+        leftHandCardArea.chiCard(minName,one,two);
     }
 
     /// <summary>
@@ -701,9 +843,15 @@ public class MJCardsManager : MonoBehaviour {
     /// <summary>
     /// 初始化手牌
     /// </summary>
-    private void initRightHandCard()
+    private void initRightHandCard(List<string> names)
     {
-        rightHandCardArea.createHandCards();
+        if (names==null)
+        {
+            rightHandCardArea.createHandCards();
+            return;
+        }
+
+        rightHandCardArea.createHandCards(names);
     }
 
     /// <summary>
@@ -721,7 +869,7 @@ public class MJCardsManager : MonoBehaviour {
     public void rightOutCard(string name)
     {
         rightOutCardArea.outCard(name);
-        rightHandCardArea.outCard();
+        rightHandCardArea.outCard(name);
     }
 
     /// <summary>
@@ -746,9 +894,9 @@ public class MJCardsManager : MonoBehaviour {
     /// 吃牌
     /// </summary>
     /// <param name="minName"></param>
-    private void rightChiCard(string minName)
+    private void rightChiCard(string minName, string one, string two)
     {
-        rightHandCardArea.chiCard(minName);
+        rightHandCardArea.chiCard(minName,one,two);
     }
 
     /// <summary>
@@ -796,9 +944,14 @@ public class MJCardsManager : MonoBehaviour {
     /// <summary>
     /// 初始化手牌
     /// </summary>
-    private void inittopHandCard()
+    private void inittopHandCard(List<string> names)
     {
-        topHandCardArea.createHandCards();
+        if (names==null)
+        {
+            topHandCardArea.createHandCards();
+            return;
+        }
+        topHandCardArea.createHandCards(names);
     }
 
     /// <summary>
@@ -816,7 +969,7 @@ public class MJCardsManager : MonoBehaviour {
     private void topOutCard(string name)
     {
         topOutCardArea.outCard(name);
-        topHandCardArea.outCard();
+        topHandCardArea.outCard(name);
     }
 
     /// <summary>
@@ -841,9 +994,9 @@ public class MJCardsManager : MonoBehaviour {
     /// 吃牌
     /// </summary>
     /// <param name="minName"></param>
-    private void topChiCard(string minName)
+    private void topChiCard(string minName, string one, string two)
     {
-        topHandCardArea.chiCard(minName);
+        topHandCardArea.chiCard(minName,one,two);
     }
 
     /// <summary>
@@ -893,9 +1046,19 @@ public class MJCardsManager : MonoBehaviour {
     public void startGame(List<string> names)
     {
         createCards(names);//创建底端牌
-        initLeftHandCard();
-        initRightHandCard();
-        inittopHandCard();
+        initLeftHandCard(null);
+        initRightHandCard(null);
+        inittopHandCard(null);
+        System.GC.Collect();
+    }
+
+    public void startGame(List<string> botton, List<string> top, List<string> left, List<string> right)
+    {
+        createCards(botton);//创建底端牌
+        initLeftHandCard(left);
+        initRightHandCard(right);
+        inittopHandCard(top);
+        System.GC.Collect();
     }
 
     /// <summary>
@@ -932,7 +1095,7 @@ public class MJCardsManager : MonoBehaviour {
     {
         switch (pos)
         {
-            case DirectionEnum.Bottom: Debug.Log("底部玩家出牌") ; break;
+            case DirectionEnum.Bottom: bottonOutCard(name); ; break;
             case DirectionEnum.Left: leftOutCard(name); break;
             case DirectionEnum.Top: topOutCard(name); ; break;
             case DirectionEnum.Right:rightOutCard(name); break;
@@ -962,11 +1125,22 @@ public class MJCardsManager : MonoBehaviour {
     /// </summary>
     /// <param name="pos"></param>
     /// <param name="name"></param>
-    public void pengCard(string pos,string name)
+    /// <param name="isReturn">是否重连</param>
+    public void pengCard(string pos,string name,bool isReturn)
     {
         switch (pos)
         {
-            case DirectionEnum.Bottom: bottonPengCard(name) ; break;
+            case DirectionEnum.Bottom:
+                if (isReturn)
+                {
+                    bottonReturnPengCard(name);
+                }
+                else
+                {
+                    bottonPengCard(name);
+                }
+           
+             ; break;
             case DirectionEnum.Left: leftPengCard(name); break;
             case DirectionEnum.Top: topPengCard(name); ; break;
             case DirectionEnum.Right: rightPengCard(name); break;
@@ -974,6 +1148,7 @@ public class MJCardsManager : MonoBehaviour {
         Debug.Log(pos + "碰牌:" + name);
     }
     
+
     /// <summary>
     /// 吃牌
     /// </summary>
@@ -981,7 +1156,7 @@ public class MJCardsManager : MonoBehaviour {
     /// <param name="one"></param>
     /// <param name="two"></param>
     /// <param name="chi">被吃的牌</param>
-    public void chiCard(string pos,int  one,int two,int chi)
+    public void chiCard(string pos,int  one,int two,int chi,bool isRetuen)
     {
         int min = 0;
         if (one<two&&one<chi)
@@ -998,10 +1173,19 @@ public class MJCardsManager : MonoBehaviour {
 
         switch (pos)
         {
-            case DirectionEnum.Bottom: bottonChiCard(one+"",two+"",chi+"",min+""); break;
-            case DirectionEnum.Left: leftChiCard(min+""); break;
-            case DirectionEnum.Top: topChiCard(min+""); ; break;
-            case DirectionEnum.Right: rightChiCard(min+""); break;
+            case DirectionEnum.Bottom:
+                if (isRetuen)
+                {
+                    bottonReturnChiCard(new List<int>() {one,two,chi});
+                }
+                else
+                {
+                    bottonChiCard(one + "", two + "", chi + "", min + "");
+                }
+                ; break;
+            case DirectionEnum.Left: leftChiCard(min+"",one+"",two+""); break;
+            case DirectionEnum.Top: topChiCard(min+"", one + "", two + ""); ; break;
+            case DirectionEnum.Right: rightChiCard(min+"", one + "", two + ""); break;
         }
         Debug.Log(pos + "吃牌:" + chi);
     }
@@ -1012,16 +1196,59 @@ public class MJCardsManager : MonoBehaviour {
     /// <param name="pos"></param>
     /// <param name="name"></param>
     /// <param name="isAn"></param>
-    public void gangCard(string pos,string name,bool isAn)
+    public void gangCard(string pos,string name,bool isAn,bool isReturn)
     {
         switch (pos)
         {
-            case DirectionEnum.Bottom: bottonGangCard(name,isAn); break;
+            case DirectionEnum.Bottom:
+                if (isReturn)
+                {
+                    bottonReturnGangCard(name, isAn);
+                }
+                else
+                {
+                    bottonGangCard(name, isAn);
+                }
+                ; break;
             case DirectionEnum.Left: leftGangCard(name,isAn); break;
             case DirectionEnum.Top: topGangCard(name,isAn); ; break;
             case DirectionEnum.Right: rightGangCard(name,isAn); break;
         }
         Debug.Log(pos + "杠牌:" + name);
+    }
+
+    /// <summary>
+    /// 是否是起手杠
+    /// </summary>
+    /// <returns>-2 有起手杠-1无起手杠，</returns>
+    public int upHandGang()
+    {
+        if (bottonHandCards==null||bottonHandCards.Count==0)
+        {
+            return -1;
+        }
+
+        for (int i=0;i<bottonHandCards.Count;i++)
+        {
+            int count = 0;
+            for (int j=i;j<bottonHandCards.Count;j++)
+            {
+                if (bottonHandCards[i].gameObject.name.Equals(bottonHandCards[j].gameObject.name))
+                {
+                    count++;
+                    if (count==4)
+                    {
+                        return int.Parse(bottonHandCards[i].gameObject.name);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        return -1;
     }
 
     /// <summary>
@@ -1032,10 +1259,10 @@ public class MJCardsManager : MonoBehaviour {
     {
         switch (pos)
         {
-            case DirectionEnum.Bottom: ; break;
-            case DirectionEnum.Left: initLeftHandCard(); ; break;
-            case DirectionEnum.Top: inittopHandCard(); ; break;
-            case DirectionEnum.Right: initRightHandCard(); break;
+            case DirectionEnum.Bottom:; break;
+            case DirectionEnum.Left: initLeftHandCard(null); ; break;
+            case DirectionEnum.Top: inittopHandCard(null); ; break;
+            case DirectionEnum.Right: initRightHandCard(null); break;
         }
     }
 
@@ -1053,6 +1280,35 @@ public class MJCardsManager : MonoBehaviour {
             case DirectionEnum.Top: topHuPai(names); ; break;
             case DirectionEnum.Right: rightHuPai(names); break;
         }
+        Debug.Log(pos + ":" + "胡牌");
+    }
+
+    private GameObject ZhuiZi = null;
+    /// <summary>
+    /// 设置锥子
+    /// </summary>
+    /// <param name="outCard"></param>
+    public void setZhuiZi(Transform outCard)
+    {
+        if (ZhuiZi==null)
+        {
+            ZhuiZi = Resources.Load<GameObject>(MyPath.MJZhuiZiPath);
+            GameObject temp = Instantiate(ZhuiZi);
+            temp.transform.SetParent(outCard.transform);
+            temp.transform.localPosition = MyPostion.ZhuiZiPos;
+            temp.transform.localEulerAngles = MyPostion.ZhuiZiEulerAngles;
+            temp.transform.localScale = Vector3.one * 0.4f;
+            ZhuiZi = temp;
+        }
+        else
+        {
+            ZhuiZi.transform.SetParent(outCard);
+            ZhuiZi.transform.localPosition = MyPostion.ZhuiZiPos;
+            ZhuiZi.transform.localEulerAngles = MyPostion.ZhuiZiEulerAngles;
+            ZhuiZi.transform.localScale = Vector3.one * 0.4f;
+        }
+        
+
     }
 
     /// <summary>
@@ -1067,6 +1323,22 @@ public class MJCardsManager : MonoBehaviour {
             case DirectionEnum.Left: leftDestroySigleOutCard(); ; break;
             case DirectionEnum.Top: topDestroySigleOutCard(); ; break;
             case DirectionEnum.Right: rightDestroySigleOutCard(); break;
+        }
+    }
+
+    /// <summary>
+    ///重连 获取出牌的信息
+    /// </summary>
+    /// <param name="pos"></param>
+    public MJOutCardInfo getOutCardInfo(string pos)
+    {
+        switch (pos)
+        {
+            case DirectionEnum.Bottom:return bottonOutCardArea.getOutCardInfo();
+            case DirectionEnum.Left:return leftOutCardArea.getOutCardInfo(); 
+            case DirectionEnum.Top: return topOutCardArea.getOutCardInfo(); 
+            case DirectionEnum.Right:return rightOutCardArea.getOutCardInfo();
+            default:return null;
         }
     }
 

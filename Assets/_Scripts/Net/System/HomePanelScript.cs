@@ -35,7 +35,6 @@ public class HomePanelScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		initUI();
-		GlobalDataScript.isonLoginPage = false;
 		checkEnterInRoom ();
 		addListener ();
 	}

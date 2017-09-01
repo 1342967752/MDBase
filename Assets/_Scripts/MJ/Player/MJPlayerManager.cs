@@ -6,15 +6,14 @@ using System.Collections.Generic;
 /// </summary>
 public class MJPlayerManager : MonoBehaviour {
     public static MJPlayerManager _instance;
+    private MJThrowEmojiBox mJThrowEmojiBox;//扔表情处理
 
     private MJPlayerItem botton;
     private MJPlayerItem top;
     private MJPlayerItem left;
     private MJPlayerItem right;
 
-    private int playerSit;//单前未座的位置
-    private int currentPos = 0;
-    private Dictionary<int, MJPlayerItem> playersVO = new Dictionary<int, MJPlayerItem>();//index对应玩家
+    private List<MJPlayerItem> playersVO = new List<MJPlayerItem>();//index对应玩家
     private Dictionary<int, string> playerPoss = new Dictionary<int, string>();//index对应玩家座位
 
     void Awake()
@@ -57,54 +56,68 @@ public class MJPlayerManager : MonoBehaviour {
             }
         }
 
-        //设置我的位置
-        botton.setInfo(players[myIndex],myIndex);
-        playersVO.Add(myIndex, botton);//添加我的信息
-        playerPoss.Add(myIndex, DirectionEnum.Bottom);//添加我的位置
+        //填满前面的玩家
+        for (int i = 0; i <myIndex; i++)
+        {
+            if (i==myIndex-1)
+            {
+                left.setInfo(players[i], i);
+                playersVO.Add(left);
+                playerPoss.Add(i, DirectionEnum.Left);
+            }else if (i==myIndex-2)
+            {
+                top.setInfo(players[i], i);
+                playersVO.Add(top);
+                playerPoss.Add(i, DirectionEnum.Top);
+            }else if (i==myIndex-3)
+            {
+                right.setInfo(players[i], i);
+                playersVO.Add(right);
+                playerPoss.Add(i, DirectionEnum.Right);
+            }
+            Debug.Log("设置玩家:" + i);
+        }
 
-        //将我后面的玩家填充
-        int curSit = 0;//0为下家 1位右家 以此类推
-        curSit++;
+        //加上自己的位置
+        playersVO.Add(botton);
+        playersVO[myIndex].setInfo(players[myIndex], myIndex);
+        playerPoss.Add(myIndex, DirectionEnum.Bottom);
+        Debug.Log("我的位置:" + myIndex);
+
+        //记录位置
+        for (int i=myIndex+1;i<4;i++)
+        {
+            if (i==1+myIndex)
+            {
+                playerPoss.Add(i, DirectionEnum.Right);
+            }else if (i==2 + myIndex)
+            {
+                playerPoss.Add(i, DirectionEnum.Top);
+            }else if (i==3 + myIndex)
+            {
+                playerPoss.Add(i, DirectionEnum.Left);
+            }
+        }
+
+        //填满后面的人
         for (int i=myIndex+1;i<players.Count;i++)
         {
-            switch (curSit)
+            if (i==myIndex+1)
             {
-                case 1:right.setInfo(players[i], i);
-                        playersVO.Add(i,right);
-                        playerPoss.Add(i,DirectionEnum.Right);
-                        break;
-                case 2:top.setInfo(players[i], i);
-                        playersVO.Add(i,top);
-                        playerPoss.Add(i,DirectionEnum.Top);
-                        break;
-                case 3:left.setInfo(players[i], i);
-                    playersVO.Add(i, left);
-                    playerPoss.Add(i, DirectionEnum.Left);
-                    ; break;
-            }
-            curSit++;
-        }
-
-        //将我前面的人填充
-        curSit = 0;//0为下家 -1位左家 以此类推
-        curSit--;
-        for (int i=myIndex-1;i>=0;i--)
-        {
-            switch (curSit)
+                right.setInfo(players[i], i);
+                playersVO.Add(right);
+            }else if (i==myIndex+2)
             {
-                case -1: left.setInfo(players[i], i);
-                    playersVO.Add(i, left);
-                    playerPoss.Add(i, DirectionEnum.Left); break;
-                case -2: top.setInfo(players[i], i);
-                    playersVO.Add(i, top);
-                    playerPoss.Add(i, DirectionEnum.Top); break;
-                case -3: right.setInfo(players[i], i);
-                    playersVO.Add(i, right);
-                    playerPoss.Add(i, DirectionEnum.Right); break;
+                top.setInfo(players[i], i);
+                playersVO.Add(top);
+            }else if (i==myIndex+3)
+            {
+                left.setInfo(players[i], i);
+                playersVO.Add(left);
             }
-            curSit--;
+            Debug.Log("设置玩家:" + i);
         }
-
+      
         //旋转色子盘 并且设置位置
         switch (myIndex)
         {
@@ -113,8 +126,9 @@ public class MJPlayerManager : MonoBehaviour {
             case 2:MJDicePlace._instance.setMyDirection(DirectionEnum.Top);break;
             case 3:MJDicePlace._instance.setMyDirection(DirectionEnum.Left);break;
         }
-        playerSit =1;//从我的座位排起
-        currentPos = players.Count ;//记录当前玩家人数
+
+        Debug.Log("现有玩家:"+playersVO.Count);
+        Debug.Log("现有位置:" + playerPoss.Count);
     }
 
     /// <summary>
@@ -123,37 +137,25 @@ public class MJPlayerManager : MonoBehaviour {
     /// <param name="player"></param>
     public void setOtherPlayerInfo(AvatarVO player)
     {
-        if (playersVO.Count > 0)//先填充之前退出的玩家位置
+        //新近入的玩家
+        if (playersVO==null||checkeUUID(player.account.uuid))
         {
-            for (int i = 0; i < playersVO.Count; i++)
-            {
-                if (playersVO.ContainsKey(i)&&playersVO[i]==null)
-                {
-                    playersVO[i].setInfo(player, playersVO[i].getIndex());
-                    return;
-                }
-            }
+            return;
         }
 
-        //新近入的玩家
-        switch (playerSit)
+        switch (playersVO.Count-getMyIndex())
         {
-            case 0:botton.setInfo(player, playerSit);
-                playersVO.Add(currentPos, botton);
-                playerPoss.Add(currentPos, DirectionEnum.Bottom); break;
-            case 1:right.setInfo(player, playerSit);
-                playersVO.Add(currentPos, right);
-                playerPoss.Add(currentPos, DirectionEnum.Right); break;
-            case 2:top.setInfo(player, playerSit);
-                playersVO.Add(currentPos, top);
-                playerPoss.Add(currentPos, DirectionEnum.Top); break;
-            case 3:left.setInfo(player, playerSit);
-                playersVO.Add(currentPos, left);
-                playerPoss.Add(currentPos, DirectionEnum.Left); break;
+            case 0:botton.setInfo(player, playersVO.Count);
+                playersVO.Add(botton); break;
+            case 1:right.setInfo(player, playersVO.Count);
+                playersVO.Add(right); break;
+            case 2:top.setInfo(player, playersVO.Count);
+                playersVO.Add(top); break;
+            case 3:left.setInfo(player, playersVO.Count);
+                playersVO.Add(left); break;
         }
+
         Debug.Log("玩家进入:"+player.account.nickname);
-        playerSit++;
-        currentPos++;
     }
 
     /// <summary>
@@ -178,7 +180,7 @@ public class MJPlayerManager : MonoBehaviour {
     /// <returns></returns>
     public MJPlayerItem getPlayerByIndex(int index)
     {
-        if (playersVO.ContainsKey(index))
+        if (playersVO!=null&&playersVO.Count>=index)
         {
             return playersVO[index];
         }
@@ -224,7 +226,7 @@ public class MJPlayerManager : MonoBehaviour {
     {
         for (int i=0;i<playersVO.Count;i++)
         {
-            if (playersVO.ContainsKey(i)&&playersVO[i].getPlayer().account.uuid==uuid)
+            if (playersVO[i]!=null&&playersVO[i].getPlayer().account.uuid==uuid)
             {
                 return i;
                 
@@ -263,7 +265,7 @@ public class MJPlayerManager : MonoBehaviour {
     /// <param name="isReady"></param>
     public void setReady(int index,bool isReady)
     {
-        if (playersVO.ContainsKey(index))
+        if (index<playersVO.Count)
         {
             playersVO[index].setReady(isReady);
             return;
@@ -278,7 +280,7 @@ public class MJPlayerManager : MonoBehaviour {
     {
         for (int i=0;i<playersVO.Count;i++)
         {
-            if (playersVO.ContainsKey(i))
+            if (playersVO[i]!=null)
             {
                 playersVO[i].setReady(false);
             }
@@ -306,10 +308,11 @@ public class MJPlayerManager : MonoBehaviour {
     /// </summary>
     public void showMsgByIndex(int avaIndex,int msgIndex)
     {
-        if (playerPoss.ContainsKey(avaIndex))
+        if (avaIndex>=playersVO.Count)
         {
-            getTransfromByPos(playerPoss[avaIndex]).GetComponent<MJMsgItem>().showMsg(msgIndex);
-        }  
+            return;
+        }
+        getTransfromByPos(playerPoss[avaIndex]).GetComponent<MJMsgItem>().showMsg(msgIndex);
     }
 
     /// <summary>
@@ -323,11 +326,14 @@ public class MJPlayerManager : MonoBehaviour {
         {
             return;
         }
-        if (playerPoss.ContainsKey(avaIndex))
+        if (playerPoss.ContainsKey(avaIndex)&&GlobalDataScript.talkingInfos.Count>0)
         {
-            getTransfromByPos(playerPoss[avaIndex]).GetComponent<MJMsgItem>().showTalkingUI();
+            getTransfromByPos(playerPoss[avaIndex]).GetComponent<MJMsgItem>().addTalking(GlobalDataScript.talkingInfos[0]);
+            GlobalDataScript.talkingInfos.RemoveAt(0);
         }
     }
+
+
 
     /// <summary>
     /// 返回玩家数量
@@ -343,7 +349,7 @@ public class MJPlayerManager : MonoBehaviour {
         List<AvatarVO> players = new List<AvatarVO>();
         for (int i=0;i<playersVO.Count;i++)
         {
-            if (playersVO.ContainsKey(i))
+            if (playersVO[i]!=null)
             {
                 players.Add(playersVO[i].getPlayer());
             }
@@ -356,23 +362,62 @@ public class MJPlayerManager : MonoBehaviour {
     /// </summary>
     public int getSexByIndex(int index)
     {
-        if (playersVO.ContainsKey(index))
+        if (index<playersVO.Count)
         {
             return playersVO[index].getPlayer().account.sex;
         }
         Debug.Log("没有该玩家性别->" + index);
-        return 1;
+        return -1;
     }
 
+    /// <summary>
+    /// 获取我的性别
+    /// </summary>
+    /// <returns></returns>
+    public int getMySex()
+    {
+        if (playersVO==null||playersVO.Count==0)
+        {
+            return -1;
+        }
+
+        return getSexByIndex(getMyIndex());
+    }
     /// <summary>
     /// 移除一个玩家信息
     /// </summary>
     public void removePlayerByIndex(int uuid)
     {
-        int index = getPlayerByUUID(uuid);
-        if (playersVO.Count>0&&playersVO.ContainsKey(index))
+        int index = getPlayerByUUID(uuid);//获取退出人的位置
+        int myIndex = getMyIndex();//获取我的位置
+        
+        if (index>myIndex)
         {
-            playersVO[index].reSet();
+            MJPlayerItem temp;
+            for (int i=index;i<playersVO.Count-1;i++)
+            {
+                temp = playersVO[i + 1];
+                playersVO[i].setInfo(temp.getPlayer(), i);
+            }
+            playersVO[playersVO.Count - 1].reSet();
+            playersVO.RemoveAt(playersVO.Count - 1);
+        }
+        else
+        {
+            MJDicePlace._instance.setMyDirection(DirectionEnum.Bottom);//色子盘重置
+            List<AvatarVO> players = new List<AvatarVO>();
+            playersVO.RemoveAt(index);
+            for (int i=0;i<playersVO.Count;i++)
+            {
+                players.Add(playersVO[i].getPlayer());
+            }
+            botton.reSet();
+            left.reSet();
+            top.reSet();
+            right.reSet();
+            playerPoss.Clear();
+            playersVO.Clear();
+            setPlayerInfo(players);
         }
     }
 
@@ -383,7 +428,7 @@ public class MJPlayerManager : MonoBehaviour {
     /// <param name="onLine"></param>
     public void setOnLineByIndex(int index,bool onLine)
     {
-        if (!playersVO.ContainsKey(index))
+        if (index>=playersVO.Count)
         {
             return;
         }
@@ -398,7 +443,7 @@ public class MJPlayerManager : MonoBehaviour {
     /// <param name="changeScore">改变的分数</param>
     public void setPlayerSocreByIndex(int index, int changeScore)
     {
-        if (playersVO == null || !playersVO.ContainsKey(index))
+        if (playersVO == null ||index>=playersVO.Count)
         {
             return;
         }
@@ -407,13 +452,191 @@ public class MJPlayerManager : MonoBehaviour {
 
     }
 
+    /// <summary>
+    /// 通过index设置庄家
+    /// </summary>
+    /// <param name="index"></param>
+    public void setBankerByIndex(int index)
+    {
+        if (index>=playersVO.Count)
+        {
+            return;
+        }
+
+        for (int i=0;i<playersVO.Count;i++)
+        {
+            if (i==index)
+            {
+                playersVO[i].setBanker(true);
+            }
+            else
+            {
+                playersVO[i].setBanker(false);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取庄家的uuid
+    /// </summary>
+    /// <returns></returns>
+    public int getBankerUUID()
+    {
+        for (int i=0;i<playersVO.Count;i++)
+        {
+            if (playersVO[i].getPlayer().main)
+            {
+                return playersVO[i].getPlayer().account.uuid;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// 获取我的头像transfrom
+    /// </summary>
+    /// <returns></returns>
+    public Transform getMyHeadTransfrom()
+    {
+        if (getTransfromByPos(DirectionEnum.Bottom)==null)
+        {
+            return null;
+        }
+
+        return getTransfromByPos(DirectionEnum.Bottom).transform.FindChild("Head").transform;
+    }
+
+    /// <summary>
+    /// 获取名字
+    /// </summary>
+    /// <returns></returns>
+    public string getMyNickName()
+    {
+        if (botton.getPlayer()!=null)
+        {
+            return botton.getPlayer().account.nickname;
+        }
+        return "";
+    }
+    /// <summary>
+    /// 检查是否有重复uuid
+    /// </summary>
+    /// <param name="uuid"></param>
+    /// <returns></returns>
+    private bool checkeUUID(int uuid)
+    {
+        if (playersVO==null||playersVO.Count==0)
+        {
+            return false;
+        }
+
+        for (int i=0;i<playersVO.Count;i++)
+        {
+            if (playersVO[i].getPlayer().account.uuid==uuid)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 改变分数
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <param name="score"></param>
+    public void changeScoreByPos(string pos,int score)
+    {
+        switch (pos)
+        {
+            case DirectionEnum.Bottom:botton.showScore(score,1f) ;break;
+            case DirectionEnum.Top: top.showScore(score, 1f); break;
+            case DirectionEnum.Right: right.showScore(score, 1f); break;
+            case DirectionEnum.Left: left.showScore(score, 1f); break;
+        }
+    }
+
+    /// <summary>
+    /// 扔表情
+    /// </summary>
+    /// <param name="startUUID"></param>
+    /// <param name="endUUID"></param>
+    /// <param name="animIndex"></param>
+    public void throwAnim(int startUUID,int endUUID,int animIndex)
+    {
+        if (mJThrowEmojiBox==null)
+        {
+            mJThrowEmojiBox = gameObject.AddComponent<MJThrowEmojiBox>();
+        }
+
+        mJThrowEmojiBox.setAnim(animIndex, getHeadByUUID(startUUID), getHeadByUUID(endUUID));
+    }
+
+    /// <summary>
+    /// 获取头像transform
+    /// </summary>
+    /// <param name="uuid"></param>
+    private Transform getHeadByUUID(int uuid)
+    {
+        return getTransfromByPos(playerPoss[getPlayerByUUID(uuid)]).FindChild("Head");
+    }
+
+    /// <summary>
+    /// 显示表情
+    /// </summary>
+    /// <param name="pos"></param>
+    /// <param name="emojiIndex"></param>
+    public void showEmoji(string pos,int emojiIndex)
+    {
+        switch (pos)
+        {
+            case DirectionEnum.Bottom: botton.showEmoji(emojiIndex); break;
+            case DirectionEnum.Top: top.showEmoji(emojiIndex); break;
+            case DirectionEnum.Right: right.showEmoji(emojiIndex); break;
+            case DirectionEnum.Left: left.showEmoji(emojiIndex); break;
+        }
+    }
+
+    /// <summary>
+    /// 根据位置获取index
+    /// </summary>
+    /// <returns></returns>
+    public int getIndexByPos(string pos)
+    {
+        switch (pos)
+        {
+            case DirectionEnum.Bottom: return botton.getIndex();
+            case DirectionEnum.Top: return top.getIndex();
+            case DirectionEnum.Right: return right.getIndex();
+            case DirectionEnum.Left: return left.getIndex();
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// 设置hu
+    /// </summary>
+    /// <param name="isHu"></param>
+    public void setHu(string pos,bool isHu)
+    {
+        switch (pos)
+        {
+            case DirectionEnum.Bottom: botton.setHu(isHu); break;
+            case DirectionEnum.Top: top.setHu(isHu); break;
+            case DirectionEnum.Right: right.setHu(isHu); break;
+            case DirectionEnum.Left: left.setHu(isHu); break;
+        }
+    }
     void OnDestroy()
     {
         if (_instance != null)
         {
+            playerPoss.Clear();
+            playersVO.Clear();
             Destroy(_instance);
             _instance = null;
         }
-        Destroy(gameObject);
     }
 }

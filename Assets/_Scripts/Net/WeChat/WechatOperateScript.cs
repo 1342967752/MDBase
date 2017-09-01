@@ -10,26 +10,18 @@ using AssemblyCSharp;
 public class WechatOperateScript : MonoBehaviour {
     public static WechatOperateScript _instance;
 
-	public ShareSDK shareSdk;
+	public  ShareSDK shareSdk;
 	private string picPath;
 
     void Awake()
     {
-        _instance = this;
-    }
-
-    public static WechatOperateScript Instance
-    {
-        get
+        if (_instance!=null)
         {
-            if (_instance==null)
-            {
-                GameObject temp = new GameObject("WechatOperateScript");
-                _instance = temp.AddComponent<WechatOperateScript>();
-                DontDestroyOnLoad(temp);
-            }
-            return _instance;
+            Destroy(gameObject);
+            return;
         }
+
+        _instance = this;
     }
 
 	void Start () {
@@ -38,36 +30,51 @@ public class WechatOperateScript : MonoBehaviour {
 			shareSdk.shareHandler += onShareCallBack;
 			shareSdk.authHandler += AuthResultHandler;
 		}
-
+        DontDestroyOnLoad(gameObject);
 	}
+
+    /// <summary>
+    /// 授权
+    /// </summary>
+    /// <param name="reqID"></param>
+    /// <param name="state"></param>
+    /// <param name="type"></param>
+    /// <param name="result"></param>
 	void AuthResultHandler(int reqID, ResponseState state, PlatformType type, Hashtable result)  
 	{     
 		if (state == ResponseState.Success)  
 		{
-            WantedTextTool.Instance.addTip("authorize success !",0);
+            Debug.Log("微信授权成功");
 			//授权成功的话，获取用户信息  
 			shareSdk.GetUserInfo(type);  
 
 		}  
 		else if (state == ResponseState.Fail)  
 		{
-            WantedTextTool.Instance.addTip("fail! error code = " + result["error_code"] + "; error msg = " + result["error_msg"],0);
+            WantedTextTool.Instance.addTip("fail! throwable stack = " + result["stack"] + "; error msg = " + result["msg"], 0);
+            Debug.Log("fail! throwable stack = " + result["stack"] + "; error msg = " + result["msg"]);
 		}  
 		else if (state == ResponseState.Cancel)  
 		{
             WantedTextTool.Instance.addTip("cancel !",0);
 		}  
-	}  
+	}
 
-	/**
-	 * 登录，提供给button使用
-	 * 
-	 */ 
-	public void login(){
+    /// <summary>
+    /// 登录，提供给button使用
+    /// </summary>
+    public void login(){
 		//TODO Login
 		//shareSdk.Authorize(PlatformType.WeChat);
-       // WantedTextTool.Instance.showTip("登录");
-        shareSdk.GetUserInfo(PlatformType.WeChat);	
+       if (DateManger.Instance.getIsFirstLogin()==0)
+       {
+            shareSdk.Authorize(PlatformType.WeChat);
+            DateManger.Instance.setIsFirstLogin(1);
+       }
+       else
+       {
+            shareSdk.GetUserInfo(PlatformType.WeChat);
+       } 
     }
 
     /// <summary>
@@ -107,7 +114,7 @@ public class WechatOperateScript : MonoBehaviour {
 	 *
 	 */ 
 	public void getUserInforCallback(int reqID, ResponseState state, PlatformType type, Hashtable data){
-
+        Debug.Log("回调成功:"+data);
 		if (data != null) {
 			try {
                 LoginVo loginvo = new LoginVo();
@@ -125,6 +132,7 @@ public class WechatOperateScript : MonoBehaviour {
                 GlobalDataScript.loginVo = loginvo;
                 GlobalDataScript.loginResponseData = new AvatarVO();
                 GlobalDataScript.loginResponseData.account = new Account();
+                GlobalDataScript.loginResponseData.account.province = loginvo.province;
                 GlobalDataScript.loginResponseData.account.city = loginvo.city;
                 GlobalDataScript.loginResponseData.account.openid = loginvo.openId;
                 GlobalDataScript.loginResponseData.account.nickname = loginvo.nickName;
@@ -133,13 +141,16 @@ public class WechatOperateScript : MonoBehaviour {
                 GlobalDataScript.loginResponseData.account.sex = loginvo.sex;
                 GlobalDataScript.loginResponseData.IP = loginvo.IP;
 
-                WantedTextTool.Instance.addTip("获取个人信息成功" + loginvo.nickName,0);
+                Debug.Log("获取位置:" + loginvo.province+loginvo.city);
+                MJUIManager._instance.loginPage.setLoginText("获取个人信息成功" + loginvo.nickName);
 
 			} catch (Exception e) {
+                MJUIManager._instance.loginPage.loginErrorCallBack();
                 WantedTextTool.Instance.addTip("请先打开你的微信客户端",0);
 				return;
 			}
 		} else {
+            MJUIManager._instance.loginPage.loginErrorCallBack();
             WantedTextTool.Instance.addTip("微信登录失败",0);
 		}
 
@@ -149,10 +160,14 @@ public class WechatOperateScript : MonoBehaviour {
 	}
 
 
-	/***
-	 * 分享战绩成功回调
-	 */ 
-	public void onShareCallBack(int reqID,ResponseState state,PlatformType type,Hashtable result){
+    /// <summary>
+    /// 分享战绩成功回调
+    /// </summary>
+    /// <param name="reqID"></param>
+    /// <param name="state"></param>
+    /// <param name="type"></param>
+    /// <param name="result"></param>
+    public void onShareCallBack(int reqID,ResponseState state,PlatformType type,Hashtable result){
 		if (state == ResponseState.Success) {
             WantedTextTool.Instance.addTip("分享成功",0);
 
@@ -165,11 +180,7 @@ public class WechatOperateScript : MonoBehaviour {
 	 * 分享战绩、战绩
 	 */ 
 	public void shareAchievementToWeChat(PlatformType platformType){
-        ShareContent customizeShareParams = new ShareContent();
-        customizeShareParams.SetTitle("麻将");
-        customizeShareParams.SetText ("1234");
-        shareSdk.ShowShareContentEditor(PlatformType.WeChat, customizeShareParams);
-        //StartCoroutine(GetCapture(platformType));
+        StartCoroutine(GetCapture(platformType));
     }
 
 	/**
@@ -177,10 +188,10 @@ public class WechatOperateScript : MonoBehaviour {
 	 */ 
 	private void shareAchievement(PlatformType platformType){
 		ShareContent customizeShareParams = new ShareContent();
-		customizeShareParams.SetText("");
+		customizeShareParams.SetText("我的战绩回调");
 		customizeShareParams.SetImagePath(picPath);
 		customizeShareParams.SetShareType(ContentType.Image);
-		customizeShareParams.SetObjectID("");
+		customizeShareParams.SetObjectID(MyName.MJGameName);
 		customizeShareParams.SetShareContentCustomize(platformType, customizeShareParams);
 		shareSdk.ShareContent (platformType, customizeShareParams);
 	}
@@ -190,7 +201,7 @@ public class WechatOperateScript : MonoBehaviour {
     /// </summary>
     /// <param name="platformType"></param>
     /// <returns></returns>
-    private IEnumerator GetCapture(PlatformType platformType)
+    IEnumerator GetCapture(PlatformType platformType)
 	{
 		yield return new WaitForEndOfFrame();
 		if(Application.platform==RuntimePlatform.Android || Application.platform==RuntimePlatform.IPhonePlayer)  
@@ -229,6 +240,27 @@ public class WechatOperateScript : MonoBehaviour {
 	}
 
     /// <summary>
+    /// 分享app
+    /// </summary>
+    /// <param name="platformType"></param>
+    public void shareApp(PlatformType platformType)
+    {
+        ShareContent content = new ShareContent();
+        content.SetText("一起来玩这个游戏吧!");
+        content.SetImageUrl(APIS.ImgUrl);
+        content.SetTitle(MyName.MJGameName);
+        //content.SetTitleUrl("http://www.mob.com");
+        //content.SetSite("Mob-ShareSDK");
+       // content.SetSiteUrl("http://www.mob.com");
+        //content.SetUrl("http://www.mob.com");
+        content.SetComment("test description");
+        //content.SetMusicUrl("http://mp3.mwap8.com/destdir/Music/2009/20090601/ZuiXuanMinZuFeng20090601119.mp3");
+        content.SetShareType(ContentType.Webpage);
+        content.SetShareContentCustomize(platformType, content);
+        shareSdk.ShareContent(platformType, content);
+    }
+
+    /// <summary>
     /// 邀请好友
     /// </summary>
     public void inviteFriend()
@@ -253,5 +285,4 @@ public class WechatOperateScript : MonoBehaviour {
             shareSdk.ShowShareContentEditor(PlatformType.WeChat, customizeShareParams);
         }
     }
-
 }

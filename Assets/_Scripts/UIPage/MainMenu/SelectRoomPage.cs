@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using TinyTeam.UI;
+using AssemblyCSharp;
 
 /// <summary>
 /// 选择房间界面
@@ -17,20 +18,21 @@ public class SelectRoomPage : TTUIPage {
 
     public SelectRoomPage() : base(UIType.Normal, UIMode.HideOther, UICollider.None)
 	{
-        uiPath = MJPath.SelectRoomPagePath;
+        uiPath = MyPath.SelectRoomPagePath;
     }
 
     public override void Awake(GameObject go)
     {
         findView();
         setBtnClickListener();
+        addListenner();
     }
 
     public override void Refresh()
     {
-        if (GlobalDataScript.loginResponseData!=null)
+        if (GlobalDataScript.loginResponseData != null)
         {
-            setPlayerHeadImage(GlobalDataScript.headSprite);
+            setPlayerHeadImage();
             setPlayerName(GlobalDataScript.loginResponseData.account.nickname);
             setRoomCardNumber(GlobalDataScript.loginResponseData.account.roomcard);
         }
@@ -38,7 +40,29 @@ public class SelectRoomPage : TTUIPage {
         {
             Debug.Log("没有登录");
         }
-       
+
+    }
+
+    public override void Hide()
+    {
+        removeListenner();
+        gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 添加监听
+    /// </summary>
+    private void addListenner()
+    {
+        SocketEventHandle.getInstance().contactInfoResponse+= contactInfoCallBack;
+    }
+
+    /// <summary>
+    /// 移除监听
+    /// </summary>
+    private void removeListenner()
+    {
+        SocketEventHandle.getInstance().contactInfoResponse -= contactInfoCallBack;
     }
 
     /// <summary>
@@ -47,8 +71,9 @@ public class SelectRoomPage : TTUIPage {
     private void findView()
     {
         lblPlayerName = this.transform.Find("TopBar/PersonImage/LabelName").GetComponent<Text>();
-        imgPlayer = this.transform.Find("TopBar/PersonImage/HeadImage").GetComponent<Image>();
+        imgPlayer = this.transform.Find("TopBar/PersonImage/HeadImage/HeadImage").GetComponent<Image>();
         lblRoomCardNumber = this.transform.Find("TopBar/BtnRoomCard/LabelRoomCardNumber").GetComponent<Text>();
+        imgPlayer.sprite = null;
     }
 
     /// <summary>
@@ -56,19 +81,27 @@ public class SelectRoomPage : TTUIPage {
     /// </summary>
     private void setBtnClickListener()
     {
-        this.transform.Find("MidBar/BtnCreateRoom").GetComponent<Button>().onClick.AddListener(() =>
+        transform.Find("MidBar/BtnCreateRoom").GetComponent<Button>().onClick.AddListener(() =>
         {
             ShowPage<CreateRoomPage>();
         });
-        this.transform.Find("MidBar/BtnJionRoom").GetComponent<Button>().onClick.AddListener(() =>
+        transform.Find("MidBar/BtnJionRoom").GetComponent<Button>().onClick.AddListener(() =>
         {
             ShowPage<EnterRoomPage>();
         });
 
-        this.transform.Find("TopBar/BtnBack").GetComponent<Button>().onClick.AddListener(() =>
+        transform.Find("TopBar/BtnBack").GetComponent<Button>().onClick.AddListener(() =>
         {
+            Debug.Log("返回主界面");
             ShowPage<MainMenuPage>();
             Hide();
+        });
+
+        transform.Find("TopBar/BtnRoomCard/AddImage").GetComponent<Button>().onClick.AddListener(() =>
+        {
+            //请求添加房卡
+            Debug.Log("添加房卡");
+            CustomSocket.getInstance().sendMsg(new GetContactInfoRequest());
         });
     }
 
@@ -76,9 +109,26 @@ public class SelectRoomPage : TTUIPage {
     /// 设置玩家头像
     /// </summary>
     /// <param name="sprite"></param>
-    public void setPlayerHeadImage(Sprite sprite)
+    public void setPlayerHeadImage()
     {
-        imgPlayer.overrideSprite = sprite;
+        if (imgPlayer.sprite!=null)
+        {
+            return;
+        }
+        GameTools.instance.loadSpriteOnNet(loadSpriteCallBack, GlobalDataScript.loginResponseData.account.headicon);
+    }
+
+    /// <summary>
+    /// 加载图片回调
+    /// </summary>
+    /// <param name="o"></param>
+    private void loadSpriteCallBack(HttpLoadModel model)
+    {
+        if (model.error!=null)
+        {
+            return;
+        }
+        imgPlayer.sprite =model.sprite;
     }
 
     /// <summary>
@@ -98,4 +148,14 @@ public class SelectRoomPage : TTUIPage {
     {
         lblRoomCardNumber.text = "" + number;
     }
+
+    /// <summary>
+    /// 请求更新房卡回调
+    /// </summary>
+    /// <param name="response"></param>
+    private void contactInfoCallBack(ClientResponse response)
+    {
+        MJUIManager._instance.backWindow.setInfo(response.message);
+    }
+
 }

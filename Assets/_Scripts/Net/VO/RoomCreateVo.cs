@@ -17,7 +17,14 @@ namespace AssemblyCSharp
 		public string name;
 		public bool addWordCard;
 		public int magnification;
-		
-	}
+
+        //回放时使用
+        public int currentRound;//单前局数
+        public int id;//回放id
+        public JingResponse jingPaiVo;//精牌vo
+        //色子点数
+        public int pointOne;
+        public int pointTwo;
+    }
 }
 

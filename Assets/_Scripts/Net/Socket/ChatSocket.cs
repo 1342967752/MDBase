@@ -41,6 +41,7 @@ public class ChatSocket{
 			tcpclient = new TcpClient();
 			//防止延迟,即时发送!
 			tcpclient.NoDelay = true;
+            Debug.Log("聊天服务器ip:"+APIS.chatSocketUrl);
 			tcpclient.BeginConnect(APIS.chatSocketUrl, 10112, new AsyncCallback(ConnectCallback), tcpclient);
 		}
 		catch(Exception ex)
@@ -248,7 +249,7 @@ public class ChatSocket{
 			MemoryStream ms = new MemoryStream(m_receiveBuffer);
 			BinaryReader buffers = new BinaryReader(ms, UTF8Encoding.Default);
 			readBuffer(buffers);
-            WantedTextTool.Instance.addTip("语音接收",0);
+           // WantedTextTool.Instance.addTip("语音接收",0);
         }
 		catch (Exception ex)
 		{

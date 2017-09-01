@@ -24,46 +24,42 @@ public class MyMahjongScript : MonoBehaviour
 
 	private List<List<int>> mineList;//所有玩家的牌
 	private int gangKind;
-	
-	/// <summary>
-	/// 庄家的索引
-	/// </summary>
-	private int bankerId;
-	private int curDirIndex;
 
+    // 庄家的索引
+    private int bankerId;
 
 	public int putOutCardPoint = -1;//打出的牌
-	private string outDir;
 
 	/// <summary>
 	/// 当前的方向字符串
 	/// </summary>
 	private string curDirString = "B";
+    private bool isFaPai = false;//是否发牌
 
 
-	private int showTimeNumber = 0;
-	private int showNoticeNumber = 0;
-	private bool timeFlag = false;
-
-
+    //是否第一次打开
 	private bool isFirstOpen = true;
 
-	/**是否为抢胡 游戏结束时需置为false**/
-	private bool isQiangHu = false;
-
+    //是否为抢胡 游戏结束时需置为false
+    private bool isQiangHu = false;
 
 	private string passType = "";
+    private JingResponse jingResponse;//精牌信息
 
     public MJOutCardInfo outCardInfo= new MJOutCardInfo();//出牌对象
+    private bool isQuitRoom = false;//是否退出游戏
+
+    private List<string> reEnterCardNameList;//重新进入房间list
 
 	void Start()
 	{
-		randShowTime ();
-		timeFlag = true;
 		addListener ();
         init();
 	}
 
+    /// <summary>
+    /// 初始化
+    /// </summary>
     private void init()
     {
         //初始化玩家信息
@@ -75,6 +71,9 @@ public class MyMahjongScript : MonoBehaviour
 
             //牌信息
             reEnterRoom();
+
+            //设置房间信息
+            MJRoomInfo._instance.setRoomId(GlobalDataScript.loginResponseData.roomId);
         }
         else
         {
@@ -87,7 +86,9 @@ public class MyMahjongScript : MonoBehaviour
                 GlobalDataScript.totalTimes = GlobalDataScript.roomJoinResponseData.roundNumber;//记录总局数
                 GlobalDataScript.surplusTimes = GlobalDataScript.roomJoinResponseData.roundNumber;//剩余局数
                 MJUIManager._instance.mJDeskPage.setTurn(GlobalDataScript.surplusTimes, GlobalDataScript.totalTimes);
-                
+
+                //设置房间信息
+                MJRoomInfo._instance.setRoomId(GlobalDataScript.roomJoinResponseData.roomId);
             }
             else//创建房间
             {
@@ -101,23 +102,20 @@ public class MyMahjongScript : MonoBehaviour
                 GlobalDataScript.surplusTimes = GlobalDataScript.roomVo.roundNumber;//剩余局数
 
                 MJUIManager._instance.mJDeskPage.setTurn(GlobalDataScript.surplusTimes, GlobalDataScript.totalTimes);
+
+                //设置房间信息
+                MJRoomInfo._instance.setRoomId(GlobalDataScript.roomVo.roomId);
             }
+            readyGame();//准备游戏
         }
-        GlobalDataScript.reEnterRoomData = null;
-        readyGame();//准备游戏
     }
-
-	private void randShowTime(){
-		showTimeNumber = (int)(UnityEngine.Random.Range(5000,10000));
-	}
-
 
 	public void addListener(){
 		SocketEventHandle.getInstance().StartGameNotice += startGame;
 		SocketEventHandle.getInstance().pickCardCallBack += pickCard;
 		SocketEventHandle.getInstance().otherPickCardCallBack += otherPickCard;
 		SocketEventHandle.getInstance().putOutCardCallBack += otherPutOutCard;
-		SocketEventHandle.getInstance().otherUserJointRoomCallBack += otherUserJointRoom;
+		SocketEventHandle.getInstance().otherUserJointRoomCallBack += otherUserJoinRoom;
 		SocketEventHandle.getInstance().PengCardCallBack += otherPeng;
 		SocketEventHandle.getInstance().GangCardCallBack += gangResponse;
 		SocketEventHandle.getInstance().gangCardNotice += otherGang;
@@ -137,6 +135,9 @@ public class MyMahjongScript : MonoBehaviour
 		SocketEventHandle.getInstance ().gameFollowBanderNotice += gameFollowBanderNotice;
         SocketEventHandle.getInstance().chiCardCallBack += ChiCardResopnse;
         SocketEventHandle.getInstance().jingCardCallBack += jingCardResponse;
+        SocketEventHandle.getInstance().shaiZiCallBack += shaiZiResponse;
+        MJPriticleManager.Instance.gangCallBack+= gangCallBack;
+        MJPriticleManager.Instance.huCallBack += huCallBack;
     }
 
 	private void removeListener(){
@@ -144,7 +145,7 @@ public class MyMahjongScript : MonoBehaviour
 		SocketEventHandle.getInstance().pickCardCallBack -= pickCard;
 		SocketEventHandle.getInstance().otherPickCardCallBack -= otherPickCard;
 		SocketEventHandle.getInstance().putOutCardCallBack -= otherPutOutCard;
-		SocketEventHandle.getInstance().otherUserJointRoomCallBack -= otherUserJointRoom;
+		SocketEventHandle.getInstance().otherUserJointRoomCallBack -= otherUserJoinRoom;
 		SocketEventHandle.getInstance().PengCardCallBack -= otherPeng;
 		SocketEventHandle.getInstance().GangCardCallBack -= gangResponse;
 		SocketEventHandle.getInstance().gangCardNotice -= otherGang;
@@ -164,11 +165,13 @@ public class MyMahjongScript : MonoBehaviour
 		SocketEventHandle.getInstance ().gameFollowBanderNotice -= gameFollowBanderNotice;
         SocketEventHandle.getInstance().chiCardCallBack -= ChiCardResopnse;
         SocketEventHandle.getInstance().jingCardCallBack -= jingCardResponse;
+        MJPriticleManager.Instance.gangCallBack -= gangCallBack;
+        MJPriticleManager.Instance.huCallBack -= huCallBack;
     }
 
-    /**
-    *准备游戏
-	*/
+    /// <summary>
+    /// 准备游戏
+    /// </summary>
     public void readyGame()
     {
         isGetJing = false;
@@ -188,12 +191,23 @@ public class MyMahjongScript : MonoBehaviour
         MJPlayerManager._instance.setReady(avatarIndex, true);
     }
 
+    bool isStarting = false;
     /// <summary>
     /// 开始游戏
     /// </summary>
     /// <param name="response">Response.</param>
     public void startGame(ClientResponse response)
 	{
+        //是否已经开始游戏
+        if (isStarting)
+        {
+            return;
+        }
+        else
+        {
+            isStarting = true;
+        }
+
         Debug.Log("开始游戏");
         
         MJUIManager._instance.mJDeskPage.setInviteBtn(false);//隐藏邀请按钮
@@ -221,10 +235,12 @@ public class MyMahjongScript : MonoBehaviour
 		} else {
 			GlobalDataScript.isDrag = false;
 		}
-
-        MJDicePlace._instance.setPointer(getDirection(bankerId), 16);//设置方向
+        MJPlayerManager._instance.setBankerByIndex(bankerId);//设置庄家
+        MJDicePlace._instance.initTimer();//初始化色子盘时间
+        MJCardsPile._instance.createCardPile();//创建牌堆
+        MJUIManager._instance.mJDeskPage.setleaveCards(136);//设置余牌显示
         MJPriticleManager.Instance.playAnim(AnimType.Duiju, DirectionEnum.Bottom);
-        Invoke("dealyStartGame", 2);//延时开始游戏
+        MJUIManager._instance.StartCoroutine(delayMoveShaiZi());//延时开始游戏
     }
 
     /// <summary>
@@ -232,9 +248,41 @@ public class MyMahjongScript : MonoBehaviour
     /// </summary>
     private void dealyStartGame()
     {
-        initMyCardListAndOtherCard();//创建手牌
+        MJUIManager._instance.mJDeskPage.setJing(jingResponse.zhengJingPai, jingResponse.fuJingPai);
+        //牌堆设置
+        MJCardsPile._instance.setBanker(bankerId);
+        MJCardsPile._instance.setJing(jingResponse.zhengJingPai, jingResponse.zhengJingIndex);
+
+        initMyCardListAndOtherCard();//创建手牌 
+        MJDicePlace._instance.setPointer(getDirection(bankerId), 16);//设置方向 
     }
     
+    /// <summary>
+    /// 延时摇动色子
+    /// </summary>
+    IEnumerator  delayMoveShaiZi()
+    {
+        yield return new WaitForSeconds(2);
+        while (true)
+        {
+            if (!gameObject.activeInHierarchy)
+            {
+                break;
+            }
+
+            if (isGetJing && isGetShaiZi)
+            {
+                Debug.Log("开始摇动色子");
+                MJDicePlace._instance.startMoveShaiZi();
+                Invoke("dealyStartGame", 3);
+                break;
+            }
+
+           
+            yield return new WaitForSeconds(0.2f);
+        }
+    }
+
     /// <summary>
     /// 筛子牌回调
     /// </summary>
@@ -245,6 +293,7 @@ public class MyMahjongScript : MonoBehaviour
         MJDicePlace._instance.setShaiZi(shaiZi.ponitOne, shaiZi.ponitTwo);
         MJCardsPile._instance.setShaiZi(shaiZi.ponitOne, shaiZi.ponitTwo,bankerId);
         isGetShaiZi = true;
+        Debug.Log("色子点数:" + shaiZi.ponitOne + shaiZi.ponitTwo);
     }
 
     /// <summary>
@@ -255,12 +304,8 @@ public class MyMahjongScript : MonoBehaviour
     {
         JingResponse jingResponse = JsonMapper.ToObject<JingResponse>(response.message);
         MJCardsManager._instance.jingPai = jingResponse;//赋值精牌
+        this.jingResponse = jingResponse;
         Debug.Log("设置精牌");
-        MJCardsPile._instance.createCardPile();//创建牌堆
-        MJUIManager._instance.mJDeskPage.setJing(jingResponse.zhengJingPai, jingResponse.fuJingPai);
-        //牌堆设置
-        MJCardsPile._instance.setBanker(bankerId);
-        MJCardsPile._instance.setJing(jingResponse.zhengJingPai, jingResponse.zhengJingIndex);
         isGetJing = true;
     }
 
@@ -306,14 +351,21 @@ public class MyMahjongScript : MonoBehaviour
         MJDicePlace._instance.setPointer(DirectionEnum.Bottom, 16);
     }
 
-    
 
 	/// <summary>
 	/// 胡，杠，碰，吃，pass按钮显示.
 	/// </summary>
 	/// <param name="response">Response.</param>
 	public void actionBtnShow(ClientResponse response){
-		GlobalDataScript.isDrag = false;
+
+        if (!isFaPai)//没有发牌回调函数继续处理
+        {
+            Debug.Log("延时显示吃碰杠");
+            SocketEventHandle.getInstance().addResponse(response);//再添加到队列
+            return;
+        }
+
+        GlobalDataScript.isDrag = false;
 		string[] strs=response.message.Split (new char[1]{','});
 		if (curDirString == DirectionEnum.Bottom) {
 			passType = "selfPickCard";
@@ -325,15 +377,17 @@ public class MyMahjongScript : MonoBehaviour
 			if (strs [i].Equals ("hu")) {
 
                 MJPGHCAction._instance.showHu();
+                Debug.Log("显示胡");
 			}else if(strs[i].Contains("qianghu")){
-				
-			
+
+                MJPGHCAction._instance.showHu();
+                Debug.Log("显示抢胡");
 			}else if(strs[i].Contains("peng")){
 
                 MJPGHCAction._instance.showPeng();
+                Debug.Log("显示碰");
             }
             else if(strs[i].Contains("chi")){
-
                 MJPGHCAction._instance.showChi();
                 string[] temps = strs[i].Split(':');
                 //记录出牌点数
@@ -345,10 +399,14 @@ public class MyMahjongScript : MonoBehaviour
                     List<string> minNames = new List<string>();
                     for (int j=1;j<count-1;j++)
                     {
+                        if (temps[j].Equals(""))
+                        {
+                            continue;
+                        }
+
                         string[] temps01 = temps[j].Split('-');
                         minNames.Add("" + findMin(putOutCardPoint,int.Parse(temps01[0]),int.Parse(temps01[1])));
                     }
-                    
                     MJPGHCAction._instance.showMulChi(minNames);
                 }
                 else
@@ -357,13 +415,18 @@ public class MyMahjongScript : MonoBehaviour
                     string[] temps02 = temps[1].Split('-');
                     chiCard.twoPoint =int.Parse(temps02[1]);
                     chiCard.onePoint = int.Parse(temps02[0]);
+                    Debug.Log("记录吃牌:" + chiCard.twoPoint + "|" + chiCard.onePoint);
                 }
-               
+                Debug.Log("显示吃");
             }else if(strs[i].Contains("gang")){
+              
                 MJPGHCAction._instance.showGang();
-			}
+                Debug.Log("显示杠");
+
+            }
 		}
 	}
+
 
     //找到最小数
     private int findMin(int one,int two,int three)
@@ -382,13 +445,14 @@ public class MyMahjongScript : MonoBehaviour
     }
 
     /// <summary>
-    /// 插入我的13张牌
+    /// 初始发牌
     /// </summary>
     /// <param name="topCount"></param>
     /// <param name="leftCount"></param>
     /// <param name="rightCount"></param>
 	private void initMyCardListAndOtherCard(){
         //插入我的13张牌
+        MJDicePlace._instance.hintShaiZi();
         List<string> myCards = new List<string>();
         for(int i = 0; i < mineList[0].Count; i++)
         {
@@ -400,14 +464,25 @@ public class MyMahjongScript : MonoBehaviour
                 }
             }
         }
-        MJCardsManager._instance.startGame(myCards);//创建牌
 
         if (myCards.Count==14)
         {
             MJCardsManager._instance.addCard(DirectionEnum.Bottom, myCards[13]);
+            myCards.RemoveAt(13);//移除最后一张添加牌
         }
+
         
+        MJCardsManager._instance.startGame(myCards);//创建牌
+
+        //其他玩家添加牌
+        if (!curDirString.Equals(DirectionEnum.Bottom))
+        {
+            MJCardsManager._instance.addCard(curDirString, "3");
+        }
+
+
         MJCardsPile._instance.getCardMul(53);//清除53张牌
+        isFaPai = true;
 	}
 
     /// <summary>
@@ -419,6 +494,7 @@ public class MyMahjongScript : MonoBehaviour
         {
             return;
         }
+        Debug.Log("请求:" + chiCard.cardPoint + "|" + chiCard.onePoint + "|" + chiCard.twoPoint);
         CustomSocket.getInstance().sendMsg(new ChiRequest(chiCard));
     }
 
@@ -439,7 +515,7 @@ public class MyMahjongScript : MonoBehaviour
         MJPriticleManager.Instance.playAnim(AnimType.Chi, curDirString);
         AudioController.Instance.playSoundByName("chi", sex);//播放音乐
         MJCardsManager._instance.chiCard(curDirString,
-            one, two, chi);
+            one, two, chi,false);
         MJDicePlace._instance.setPointer(curDirString, 16);
         if (curDirString != DirectionEnum.Bottom)
         {
@@ -464,7 +540,13 @@ public class MyMahjongScript : MonoBehaviour
 	/// <param name="response">Response.</param>
 	public void otherPutOutCard(ClientResponse response)
 	{
-		JsonData json = JsonMapper.ToObject(response.message);
+        if (!isFaPai)//没有发牌回调函数继续处理
+        {
+            SocketEventHandle.getInstance().addResponse(response);//再添加到队列
+            return;
+        }
+
+        JsonData json = JsonMapper.ToObject(response.message);
 		int cardPoint = (int) json["cardIndex"];
 		int curAvatarIndex = (int) json["curAvatarIndex"];
         putOutCardPoint = cardPoint;//记录出的牌
@@ -492,10 +574,16 @@ public class MyMahjongScript : MonoBehaviour
     /// <param name="response"></param>
 	public void otherPeng(ClientResponse response)
 	{
-		OtherPengGangBackVO cardVo = JsonMapper.ToObject<OtherPengGangBackVO>(response.message);
+        if (!isFaPai)//没有发牌回调函数继续处理
+        {
+            SocketEventHandle.getInstance().addResponse(response);//再添加到队列
+            return;
+        }
+
+        OtherPengGangBackVO cardVo = JsonMapper.ToObject<OtherPengGangBackVO>(response.message);
 		curDirString = getDirection (cardVo.avatarId);
         int sex = MJPlayerManager._instance.getSexByIndex(cardVo.avatarId);
-        MJCardsManager._instance.pengCard(curDirString, cardVo.cardPoint+"");
+        MJCardsManager._instance.pengCard(curDirString, cardVo.cardPoint+"",false);
         MJPriticleManager.Instance.playAnim(AnimType.Peng, curDirString);//播放动画
         MJPGHCAction._instance.close();
         AudioController.Instance.playSoundByName("peng", sex);
@@ -524,20 +612,54 @@ public class MyMahjongScript : MonoBehaviour
     /// <param name="response"></param>
 	private void otherGang(ClientResponse response) 
 	{
-		GangNoticeVO gangNotice = JsonMapper.ToObject<GangNoticeVO>(response.message);
+        if (!isFaPai)//没有发牌回调函数继续处理
+        {
+            SocketEventHandle.getInstance().addResponse(response);//再添加到队列
+            return;
+        }
+
+        GangNoticeVO gangNotice = JsonMapper.ToObject<GangNoticeVO>(response.message);
 		int cardPoint = gangNotice.cardPoint;
 		int type = gangNotice.type;
         int sex = MJPlayerManager._instance.getSexByIndex(gangNotice.avatarId);
 		Vector3 tempvector3 = new Vector3(0, 0, 0);
 		curDirString = getDirection(gangNotice.avatarId);
-
+        gangScoreModel = new MJScoreModel();
         if (type==0)
         {
-            MJCardsManager._instance.gangCard(curDirString,cardPoint+"", false);
+            MJCardsManager._instance.gangCard(curDirString,cardPoint+"", false,false);
+           
         }
         else
         {
-            MJCardsManager._instance.gangCard(curDirString, cardPoint + "", true);
+            MJCardsManager._instance.gangCard(curDirString, cardPoint + "", true,false);
+            #region //记录分数
+            switch (curDirString)
+            {
+                case DirectionEnum.Bottom:
+                    gangScoreModel.bottomChangeScore = 3 * MyScore.gangScore;
+                    gangScoreModel.topChangeScore = -MyScore.gangScore;
+                    gangScoreModel.rightChangeScore = -MyScore.gangScore;
+                    gangScoreModel.leftChangeScore = -MyScore.gangScore;
+                    break;
+                case DirectionEnum.Top:
+                    gangScoreModel.bottomChangeScore = -MyScore.gangScore;
+                    gangScoreModel.topChangeScore = 3 * MyScore.gangScore;
+                    gangScoreModel.rightChangeScore = -MyScore.gangScore;
+                    gangScoreModel.leftChangeScore = -MyScore.gangScore; break;
+                case DirectionEnum.Right:
+                    gangScoreModel.bottomChangeScore = -MyScore.gangScore;
+                    gangScoreModel.topChangeScore = -MyScore.gangScore;
+                    gangScoreModel.rightChangeScore = 3 * MyScore.gangScore;
+                    gangScoreModel.leftChangeScore = -MyScore.gangScore; break;
+                case DirectionEnum.Left:
+                    gangScoreModel.bottomChangeScore = -MyScore.gangScore;
+                    gangScoreModel.topChangeScore = -MyScore.gangScore;
+                    gangScoreModel.rightChangeScore = -MyScore.gangScore;
+                    gangScoreModel.leftChangeScore = 3 * MyScore.gangScore; break;
+            }
+            #endregion
+
         }
        
         MJPGHCAction._instance.close();
@@ -592,6 +714,7 @@ public class MyMahjongScript : MonoBehaviour
         Image addCard = MJCardsManager._instance.getBottonAddCard();
         int cardPoint = 0;
         int sex = MJPlayerManager._instance.getSexByIndex(MJPlayerManager._instance.getMyIndex());
+        gangScoreModel = new MJScoreModel();
         //获取杠牌
         if (addCard==null)
         {
@@ -606,11 +729,32 @@ public class MyMahjongScript : MonoBehaviour
         if (gangKind == 0)//明杠
         {
 
-            MJCardsManager._instance.gangCard(DirectionEnum.Bottom, cardPoint + "", false);
+            MJCardsManager._instance.gangCard(DirectionEnum.Bottom, cardPoint + "", false,false);
+            #region 记录分数
+            
+            gangScoreModel.bottomChangeScore = MyScore.gangScore;
+            if (!outCardInfo.pos.Equals(""))
+            {
+                switch (outCardInfo.pos)
+                {
+                    case DirectionEnum.Bottom: gangScoreModel.bottomChangeScore = -MyScore.gangScore; break;
+                    case DirectionEnum.Top: gangScoreModel.topChangeScore = -MyScore.gangScore; break;
+                    case DirectionEnum.Right: gangScoreModel.rightChangeScore = -MyScore.gangScore; break;
+                    case DirectionEnum.Left: gangScoreModel.leftChangeScore = -MyScore.gangScore; break;
+                }
+            }
+            #endregion
         }
         else//暗杠
         {
-            MJCardsManager._instance.gangCard(DirectionEnum.Bottom, cardPoint + "", true);
+            MJCardsManager._instance.gangCard(DirectionEnum.Bottom, cardPoint + "", true,false);
+            #region 记录分数
+            
+            gangScoreModel.bottomChangeScore = 3 * MyScore.gangScore;
+            gangScoreModel.topChangeScore = -MyScore.gangScore;
+            gangScoreModel.leftChangeScore = -MyScore.gangScore;
+            gangScoreModel.rightChangeScore = -MyScore.gangScore;
+            #endregion
         }
         AudioController.Instance.playSoundByName("gang", sex);
         MJPriticleManager.Instance.playAnim(AnimType.Gang, DirectionEnum.Bottom);
@@ -633,16 +777,27 @@ public class MyMahjongScript : MonoBehaviour
         Image addcard = MJCardsManager._instance.getBottonAddCard();
         int cardPoint = 0;
         int type = 0;
-		if (addcard==null)
-		{
+
+       if (addcard == null)//明杠
+        {
             cardPoint = putOutCardPoint;
             type = 0;
         }
-        else
+        else//暗杠
         {
-            cardPoint = int.Parse(addcard.gameObject.name);
+            if (MJCardsManager._instance.upHandGang()>=0)//起手杠情况
+            {
+                cardPoint = MJCardsManager._instance.upHandGang();
+            }
+            else
+            {
+                cardPoint = int.Parse(addcard.gameObject.name);
+            }
+            
             type = 1;
         }
+
+
         CustomSocket.getInstance().sendMsg(new GangCardRequest(cardPoint, type));
         return;
 	}
@@ -654,7 +809,11 @@ public class MyMahjongScript : MonoBehaviour
 		GlobalDataScript.surplusTimes = roomvo.roundNumber;
 	}
 
-	public void otherUserJointRoom(ClientResponse response){
+    /// <summary>
+    /// 其他人加入房间回调
+    /// </summary>
+    /// <param name="response"></param>
+	public void otherUserJoinRoom(ClientResponse response){
 		AvatarVO avatar = JsonMapper.ToObject<AvatarVO> (response.message);
         MJPlayerManager._instance.setOtherPlayerInfo(avatar);
 	}
@@ -676,16 +835,25 @@ public class MyMahjongScript : MonoBehaviour
         CustomSocket.getInstance().sendMsg(new HupaiRequest(sendMsg));
     }
 
-    /**
-	 * 胡牌请求回调
-	 */
+    /// <summary>
+    /// 胡牌请求回调
+    /// </summary>
+    /// <param name="response"></param>
     private void hupaiCallBack(ClientResponse response)
     {
+        if (GlobalDataScript.reEnterRoomData!=null)
+        {
+            Debug.Log("还没有初始化数据");
+            SocketEventHandle.getInstance().addResponse(response);
+            return;
+        }
+
         //删除这句，未区分胡家是谁
         GlobalDataScript.hupaiResponseVo = new HupaiResponseVo();
         GlobalDataScript.hupaiResponseVo = JsonMapper.ToObject<HupaiResponseVo>(response.message);
 
         string scores = GlobalDataScript.hupaiResponseVo.currentScore;
+        huscoreMode = new MJScoreModel();
         if (GlobalDataScript.hupaiResponseVo.type == "0")
         {
             for (int i = 0; i < GlobalDataScript.hupaiResponseVo.avatarList.Count; i++)
@@ -694,16 +862,38 @@ public class MyMahjongScript : MonoBehaviour
                 {//胡
                     
                     MJPriticleManager.Instance.playAnim(AnimType.Hu, getDirection(i));//播放动画
+                    AudioController.Instance.playSoundByName(MyName.Audio_hu01, MJPlayerManager._instance.getSexByIndex(i));
                 }
                 else if (checkAvarHupai(GlobalDataScript.hupaiResponseVo.avatarList[i]) == 2)
                 {//自摸
 
                     MJPriticleManager.Instance.playAnim(AnimType.Zimo, getDirection(i));//播放动画
+                    AudioController.Instance.playSoundByName(MyName.Audio_zimo, MJPlayerManager._instance.getSexByIndex(i));
                 }
                 else
                 {//没胡
                     
                 }
+
+                #region 设置分数
+                Debug.Log("设置分数");
+                switch (getDirection(i))
+                {
+                    case DirectionEnum.Bottom:
+                        huscoreMode.bottomChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Top:
+                        huscoreMode.topChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Right:
+                        huscoreMode.rightChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Left:
+                        huscoreMode.leftChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                }
+                #endregion
+
                 MJCardsManager._instance.huCard(getDirection(i), toString(GlobalDataScript.hupaiResponseVo.avatarList[i].paiArray));//显示牌
             }
         }
@@ -725,6 +915,26 @@ public class MyMahjongScript : MonoBehaviour
                 {//没胡
 
                 }
+
+                #region 设置分数
+                Debug.Log("设置分数");
+                switch (getDirection(i))
+                {
+                    case DirectionEnum.Bottom:
+                        huscoreMode.bottomChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Top:
+                        huscoreMode.topChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Right:
+                        huscoreMode.rightChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                    case DirectionEnum.Left:
+                        huscoreMode.leftChangeScore = GlobalDataScript.hupaiResponseVo.avatarList[i].huScore;
+                        break;
+                }
+                #endregion
+
                 MJCardsManager._instance.huCard(getDirection(i), toString(GlobalDataScript.hupaiResponseVo.avatarList[i].paiArray));//显示牌
             }
         }
@@ -734,7 +944,11 @@ public class MyMahjongScript : MonoBehaviour
         }
         MJPGHCAction._instance.close();
         MJDicePlace._instance.reset();
-        Invoke("danJuJieSuan", 1);//唤醒单局结算
+        //将之前的ui隐藏
+        MJUIManager._instance.mJDanJIeSuan.Hide();
+        MJUIManager._instance.mJQuitRoomPage.close();
+
+        Invoke("danJuJieSuan", 2);//唤醒单局结算
     }
 
     /// <summary>
@@ -824,11 +1038,13 @@ public class MyMahjongScript : MonoBehaviour
     /// </summary>
     public void danJuJieSuan()
     {
+        //色子盘归零
+        MJDicePlace._instance.setPointer("C", 0);//关闭色子盘
         HupaiResponseVo hupaiResponseVo = GlobalDataScript.hupaiResponseVo;
-
+        
+        //存下每一个人总分数
+        Dictionary<int, HuipaiObj> huPaiInfos = new Dictionary<int, HuipaiObj>();//uuid+胡牌分数
         string[] benJuscores = hupaiResponseVo.currentScore.Split(',');
-        //存下每一个人的分数
-        Dictionary<int, int> playerBenJuScore = new Dictionary<int, int>();//uuid+胡牌分数
         for (int i=0;i<benJuscores.Length;i++)
         {
             if (benJuscores[i].Equals(""))
@@ -837,25 +1053,53 @@ public class MyMahjongScript : MonoBehaviour
             }
             Debug.Log(benJuscores[i]);
             string[] temp = benJuscores[i].Split(':');
-            playerBenJuScore.Add(int.Parse(temp[0]), int.Parse(temp[1]));
+            if (huPaiInfos.ContainsKey(int.Parse(temp[0])))
+            {
+                continue;
+            }
+
+            HuipaiObj huipaiObj = new HuipaiObj();
+            huipaiObj.uuid = temp[0];//记录uuid
+            huipaiObj.currentScore = temp[1];//记录单前分数
+            huPaiInfos.Add(int.Parse(temp[0]), huipaiObj);
         }
 
-        int score = 0;
         for (int i=0;i<hupaiResponseVo.avatarList.Count;i++)
         {
-            if (playerBenJuScore.ContainsKey(MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid))
+            if (MJPlayerManager._instance.getPlayerByIndex(i)==null||!huPaiInfos.ContainsKey(MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid))//没有该玩家 跳过循环
             {
-                score = playerBenJuScore[MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid];
+                continue;
+            }
+            
+            MJUIManager._instance.mJDanJIeSuan.setPlayerInfo(MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid, 
+                MJPlayerManager._instance.getPlayerByIndex(i).getHeadSprite(),huPaiInfos[MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid], hupaiResponseVo.avatarList[i]);
+        }
+
+        
+        //先设置玩家信息才能设置胡牌mode和type
+        if (hupaiResponseVo.huMode==5&& hupaiResponseVo.huType != 0)
+        {
+            //设置胡牌类型
+            MJUIManager._instance.mJDanJIeSuan.setHuPaiType(hupaiResponseVo.huType);
+            MJUIManager._instance.mJDanJIeSuan.setHuPaiMode(MJUIManager._instance.mJDanJIeSuan.getHuPlayerIndex(), 6);
+        }
+        else
+        {
+            if (hupaiResponseVo.huType==0)
+            {
+                MJUIManager._instance.mJDanJIeSuan.setHuPaiMode(MJUIManager._instance.mJDanJIeSuan.getHuPlayerIndex(), -1);//没胡
             }
             else
             {
-                score = 0;
+                //设置胡牌类型
+                MJUIManager._instance.mJDanJIeSuan.setHuPaiType(hupaiResponseVo.huType);
+                MJUIManager._instance.mJDanJIeSuan.setHuPaiMode(MJUIManager._instance.mJDanJIeSuan.getHuPlayerIndex(), hupaiResponseVo.huMode);
             }
-            MJUIManager._instance.mJDanJIeSuan.setPlayerInfo(MJPlayerManager._instance.getPlayerByIndex(i).getPlayer().account.uuid, 
-                MJPlayerManager._instance.getPlayerByIndex(i).getHeadSprite(),score, hupaiResponseVo.avatarList[i]);
+            
         }
 
         MJUIManager._instance.mJQuitRoomPage.Hide();
+        isStarting = false;
         Debug.Log("单局结算");
     }
 
@@ -870,8 +1114,8 @@ public class MyMahjongScript : MonoBehaviour
         {
             index = MJPlayerManager._instance.getPlayerByUUID(finalGameEndVo.totalInfo[i].uuid);
             MJUIManager._instance.mJZongJieSuan.setPlayerInfoWithOrder(i,
-                MJPlayerManager._instance.getPlayerByIndex(index).getHeadSprite(), finalGameEndVo.totalInfo[i].getNickname(), 4+"",""+ 1,
-                finalGameEndVo.totalInfo[i].scores+"");
+                MJPlayerManager._instance.getPlayerByIndex(index).getHeadSprite(), finalGameEndVo.totalInfo[i].getNickname(), (GlobalDataScript.totalTimes-GlobalDataScript.surplusTimes)+"",""+ (finalGameEndVo.totalInfo[i].jiepao+ finalGameEndVo.totalInfo[i].zimo),
+                finalGameEndVo.totalInfo[i].scores+"", finalGameEndVo.totalInfo[i].uuid);
         }
         MJUIManager._instance.mJZongJieSuan.Hide();
         Debug.Log("终局结算");
@@ -888,7 +1132,7 @@ public class MyMahjongScript : MonoBehaviour
         {
             for (int j=i+1;j<finalIten.Count;j++)
             {
-                if (finalIten[i].scores>finalIten[j].scores)
+                if (finalIten[i].scores<finalIten[j].scores)
                 {
                     temp = finalIten[i];
                     finalIten[i] = finalIten[j];
@@ -906,6 +1150,7 @@ public class MyMahjongScript : MonoBehaviour
     //退出房间请求
     public void quiteRoom()
     {
+        Debug.Log("请求退出");
         OutRoomRequestVo vo = new OutRoomRequestVo();
         vo.roomId = GlobalDataScript.roomVo.roomId;
         string sendMsg = JsonMapper.ToJson(vo);
@@ -913,6 +1158,7 @@ public class MyMahjongScript : MonoBehaviour
     }
 
     public void outRoomCallbak(ClientResponse response){
+        Debug.Log("退出");
 		OutRoomResponseVo responseMsg = JsonMapper.ToObject<OutRoomResponseVo> (response.message);
 		if (responseMsg.status_code.Equals("0") ) {
             //如果是自己，或者为地主则退出房间
@@ -920,7 +1166,7 @@ public class MyMahjongScript : MonoBehaviour
            {
                 MJScenesManager.Instance.loadSceneNotAnim(SceneName.MainMenu);
                 Debug.Log("退出房间成功");
-                GlobalDataScript.isStartGame = false;
+                exitOrDissoliveRoom();
             }
             else
             {
@@ -939,7 +1185,12 @@ public class MyMahjongScript : MonoBehaviour
     public void dissoliveRoomResponse( ClientResponse response){
 		DissoliveRoomResponseVo dissoliveRoomResponseVo = JsonMapper.ToObject<DissoliveRoomResponseVo> (response.message);
 		int uuid = dissoliveRoomResponseVo.uuid;
-		if (dissoliveRoomResponseVo.type == "0") {//显示解散ui
+		if (dissoliveRoomResponseVo.type == "0") {
+            if (isQuitRoom)
+            {
+                return;
+            }
+            //显示解散ui 过滤掉自己的
             if (dissoliveRoomResponseVo.uuid!=MJPlayerManager._instance.getMyUUID())
             {
                 MJUIManager._instance.mJQuitRoomPage.insertInfo(uuid);
@@ -948,29 +1199,28 @@ public class MyMahjongScript : MonoBehaviour
             
 		} else if (dissoliveRoomResponseVo.type == "3") {//解散
             Debug.Log("解散房间");
-            if (GlobalDataScript.isStartGame)
-            {
-                MJUIManager._instance.mJQuitRoomPage.close();
-            }
-            else
-            {
-                MJScenesManager.Instance.loadSceneNotAnim(SceneName.MainMenu);
-               
-            }
-            GlobalDataScript.isStartGame = false;
-
+            MJScenesManager.Instance.loadSceneNotAnim(SceneName.MainMenu);
+            exitOrDissoliveRoom();
         }
         else if (dissoliveRoomResponseVo.type == "1")//同意
 		{
+            if (isQuitRoom)
+            {
+                return;
+            }
             MJUIManager._instance.mJQuitRoomPage.updateInfo(uuid, true);
             Debug.Log(getDirection(MJPlayerManager._instance.getPlayerByUUID(uuid)) +":同意");
 
 		}else if (dissoliveRoomResponseVo.type == "2")//拒绝
 		{
+            if (isQuitRoom)
+            {
+                return;
+            }
             MJUIManager._instance.mJQuitRoomPage.updateInfo(uuid, false);
             Debug.Log(getDirection(MJPlayerManager._instance.getPlayerByUUID(uuid)) + ":拒绝");
             refuseQuitRoomPlayerCount++;
-            if (refuseQuitRoomPlayerCount>=2)
+            if (!isQuitRoom&&refuseQuitRoomPlayerCount>=2)
             {
                 refuseQuitRoomPlayerCount = 0;
                 MJUIManager._instance.mJQuitRoomPage.close();
@@ -999,8 +1249,11 @@ public class MyMahjongScript : MonoBehaviour
 		GlobalDataScript.loginResponseData.resetData ();//复位房间数据
 		GlobalDataScript.loginResponseData.roomId = 0;//复位房间数据
 		GlobalDataScript.roomVo.roomId = 0;
-		GlobalDataScript.soundToggle = true;
+        GlobalDataScript.reEnterRoomData = null;
+        GlobalDataScript.roomJoinResponseData = null;
         GlobalDataScript.isStartGame = false;
+        GlobalDataScript.roomAvatarVoList = null;
+        isQuitRoom= true;
 		removeListener ();	
 	}
 
@@ -1030,6 +1283,7 @@ public class MyMahjongScript : MonoBehaviour
 			GlobalDataScript.roomVo.ziMo = GlobalDataScript.reEnterRoomData.ziMo;
 			GlobalDataScript.roomVo.magnification = GlobalDataScript.reEnterRoomData.magnification;
 			GlobalDataScript.roomVo.ma = GlobalDataScript.reEnterRoomData.ma;
+            
 
             //设置座位
             setRoomRemark();
@@ -1057,6 +1311,10 @@ public class MyMahjongScript : MonoBehaviour
                 MJUIManager._instance.mJDeskPage.setInviteBtn(false);//隐藏邀请按钮
                 GlobalDataScript.isStartGame = true;
             }
+            else
+            {
+                readyGame();//准备游戏
+            }
 
 			GlobalDataScript.roomAvatarVoList = GlobalDataScript.reEnterRoomData.playerList;
 
@@ -1066,7 +1324,7 @@ public class MyMahjongScript : MonoBehaviour
 
 			} else {//游戏开始
                 GlobalDataScript.isStartGame = true;
-
+                
                 //关闭ui
                 MJUIManager._instance.mJDeskPage.setInviteBtn(false);
                 MJPlayerManager._instance.closeAllREadyUI();
@@ -1097,7 +1355,7 @@ public class MyMahjongScript : MonoBehaviour
                 for (int i = 0; i < GlobalDataScript.reEnterRoomData.playerList.Count; i++)
                 {
                     int[] chupai = GlobalDataScript.reEnterRoomData.playerList[i].chupais;
-                    outDir = getDirection(getIndexByUUID(GlobalDataScript.reEnterRoomData.playerList[i].account.uuid));
+                    string outDir = getDirection(getIndexByUUID(GlobalDataScript.reEnterRoomData.playerList[i].account.uuid));
                     if (chupai != null && chupai.Length > 0)
                     {
                         for (int j = 0; j < chupai.Length; j++)
@@ -1147,12 +1405,12 @@ public class MyMahjongScript : MonoBehaviour
 
                                 if (gangpaiObj.type == "an")
                                 {
-                                    MJCardsManager._instance.gangCard(dirstr, gangpaiObj.cardPiont+"",true);
+                                    MJCardsManager._instance.gangCard(dirstr, gangpaiObj.cardPiont+"",true,true);
 
                                 }
                                 else
                                 {
-                                    MJCardsManager._instance.gangCard(dirstr, gangpaiObj.cardPiont + "", false);
+                                    MJCardsManager._instance.gangCard(dirstr, gangpaiObj.cardPiont + "", false,true);
                                 }
 
                                 if (dirstr.Equals(DirectionEnum.Bottom))
@@ -1164,6 +1422,7 @@ public class MyMahjongScript : MonoBehaviour
                     }
 
                 }
+                reEntergangCount = gangCount;//记录杠的次数
                 #endregion
 
                 #region 显示碰牌
@@ -1179,19 +1438,59 @@ public class MyMahjongScript : MonoBehaviour
                             if (paiArrayType[j] == 1 && GlobalDataScript.reEnterRoomData.playerList[i].paiArray[0][j] > 0)
                             {
                                 GlobalDataScript.reEnterRoomData.playerList[i].paiArray[0][j] -= 3;
-                                MJCardsManager._instance.pengCard(dirstr, j+"");
+                                MJCardsManager._instance.pengCard(dirstr, j+"",true);
                                 if (dirstr.Equals(DirectionEnum.Bottom))
                                 {
                                     pengCount++;
                                 }
 
-                            }
-                           
+                            }  
                         }
                     }
                 }
-                MJCardsManager._instance.bottonMoveHandCard(gangCount, pengCount);//移动手牌
+                
                 #endregion
+
+                #region 显示吃牌
+                int chiCount = 0;//吃的次数
+                for (int i = 0; i < GlobalDataScript.reEnterRoomData.playerList.Count; i++)
+                {
+                    int[] paiArrayType = GlobalDataScript.reEnterRoomData.playerList[i].paiArray[1];
+                    string dirstr = getDirection(getIndexByUUID(GlobalDataScript.reEnterRoomData.playerList[i].account.uuid));
+                    if (paiArrayType.Contains<int>(4))
+                    {
+                        string chiString = GlobalDataScript.reEnterRoomData.playerList[i].huReturnObjectVO.totalInfo.chi;
+                        if (chiString != null)
+                        {
+                            string[] chitemps = chiString.Split(new char[1] { ',' });
+                            for (int j = 0; j < chitemps.Length; j++)
+                            {
+                                string item = chitemps[j];
+                                string[] temp = item.Split(':');
+                                ChipaiObj chipaiObj = new ChipaiObj();
+                                chipaiObj.cardPionts = new List<int>();
+                                chipaiObj.cardPionts.Add(int.Parse(temp[0]));
+                                chipaiObj.cardPionts.Add(int.Parse(temp[1]));
+                                chipaiObj.cardPionts.Add(int.Parse(temp[2]));
+
+                                //减少手牌
+                                GlobalDataScript.reEnterRoomData.playerList[i].paiArray[0][chipaiObj.cardPionts[0]] -= 1;
+                                GlobalDataScript.reEnterRoomData.playerList[i].paiArray[0][chipaiObj.cardPionts[1]] -= 1;
+                                GlobalDataScript.reEnterRoomData.playerList[i].paiArray[0][chipaiObj.cardPionts[2]] -= 1;
+
+                                MJCardsManager._instance.chiCard(dirstr, chipaiObj.cardPionts[0], chipaiObj.cardPionts[1], chipaiObj.cardPionts[2],true);
+
+                                if (dirstr.Equals(DirectionEnum.Bottom))
+                                {
+                                    chiCount++;
+                                }
+                            }
+                        }
+                    }
+
+                }
+                #endregion
+                MJCardsManager._instance.bottonMoveHandCard(gangCount, chiCount+pengCount);//移动手牌
 
                 #region 显示自己的手牌
                 mineList = ToList(GlobalDataScript.reEnterRoomData.playerList[MJPlayerManager._instance.getMyIndex()].paiArray);
@@ -1207,18 +1506,15 @@ public class MyMahjongScript : MonoBehaviour
 
                     }
                 }
-
-                if (name.Count==14)
-                {
-                    MJCardsManager._instance.addCard(DirectionEnum.Bottom, name[13]);
-                }
-                MJCardsManager._instance.createCards(name);//创建底部牌
-
+                Debug.Log("自己手牌:" + name.Count);
+                isFaPai = true;
+                reEnterCardNameList = name;//记录手牌
                 #endregion
 
                 
                 GlobalDataScript.loginResponseData.account = GlobalDataScript.reEnterRoomData.playerList[MJPlayerManager._instance.getMyIndex()].account;//记录我的信息
                 CustomSocket.getInstance ().sendMsg (new CurrentStatusRequest ());
+                
             }
 
         }
@@ -1281,11 +1577,38 @@ public class MyMahjongScript : MonoBehaviour
     /// <param name="response"></param>
 	public void messageBoxNotice(ClientResponse response){
 		string[] arr = response.message.Split (new char[1]{ '|' });
-		int uuid = int.Parse(arr[1]);
-		int curAvaIndex = getIndexByUUID (uuid);
-        int msg = int.Parse(arr[0]);
-        MJPlayerManager._instance.showMsgByIndex(curAvaIndex, msg);
-        AudioController.Instance.playSoundByName(msg+"", MJPlayerManager._instance.getSexByIndex(curDirIndex));
+
+        switch (int.Parse(arr[0]))
+        {
+            case 0:Debug.Log("无效消息");break;
+            case 1://消息泡泡
+                Debug.Log("msg");
+                int uuid = int.Parse(arr[2]);
+                int curAvaIndex = getIndexByUUID(uuid);
+                int msg = int.Parse(arr[1]);
+                if (uuid==GlobalDataScript.loginResponseData.account.uuid)
+                {
+                    return;
+                }
+                MJPlayerManager._instance.showMsgByIndex(curAvaIndex, msg);
+                AudioController.Instance.playSoundByName(msg + "", MJPlayerManager._instance.getSexByIndex(curAvaIndex));
+                Debug.Log("消息:" +msg);
+                break;
+            case 2://表情
+                if (int.Parse(arr[2]) == GlobalDataScript.loginResponseData.account.uuid)
+                {
+                    return;
+                }
+                MJPlayerManager._instance.showEmoji(getDirection(getIndexByUUID(int.Parse(arr[2]))), int.Parse(arr[1]));
+                ; break;
+            case 3://动画
+                MJPlayerManager._instance.throwAnim(int.Parse(arr[1]), int.Parse(arr[3]), int.Parse(arr[2]));
+                ; break;
+        }
+
+
+
+		
     }
 
 	
@@ -1297,10 +1620,12 @@ public class MyMahjongScript : MonoBehaviour
 		int sendUUid = int.Parse(response.message);
 		if (sendUUid > 0) {
             MJPlayerManager._instance.showTalkingUI(sendUUid);
+
         }
 	}
 
     private bool isReturnGame = false;//是否回到游戏
+    private int reEntergangCount = 0;//杠的次数
     /// <summary>
     /// 返回游戏回调
     /// </summary>
@@ -1335,17 +1660,18 @@ public class MyMahjongScript : MonoBehaviour
             curAvatarIndexTemp = int.Parse(returnJsonData["curAvatarIndex"].ToString());//当前打牌人的索引
             putOffCardPointTemp = int.Parse(returnJsonData["putOffCardPoint"].ToString());//当前打得点数
             putOutCardPoint = putOffCardPointTemp;//设置单前打的点数
-           
+            outCardInfo = MJCardsManager._instance.getOutCardInfo(getDirection(curAvatarIndexTemp));//设置出牌信息
 
-            putOutCardPoint = putOffCardPointTemp;//碰
+
             pickAvatarIndexTemp = int.Parse(returnJsonData["pickAvatarIndex"].ToString()); //当前摸牌牌人的索引
             MJDicePlace._instance.setPointer(getDirection(pickAvatarIndexTemp), 16);//设置出牌方向
 
             /**这句代码有可能引发catch  所以后面的 SelfAndOtherPutoutCard = currentCardPointTemp; 可能不执行**/
             currentCardPointTemp = int.Parse(returnJsonData["currentCardPoint"].ToString());//当前摸得的点数  
+           
             MJCardsManager._instance.addCard(getDirection(pickAvatarIndexTemp), currentCardPointTemp + "");//摸牌
             curDirString = getDirection(pickAvatarIndexTemp);
-
+            Debug.Log(pickAvatarIndexTemp + "摸牌:" + currentCardPointTemp);
 
         } catch (Exception ex) {
 
@@ -1355,15 +1681,26 @@ public class MyMahjongScript : MonoBehaviour
         if (pickAvatarIndexTemp == MJPlayerManager._instance.getMyIndex())
         {//自己摸牌
             if (currentCardPointTemp == -2)
-            {
-
+            { 
                 GlobalDataScript.isDrag = true;
                 curDirString = DirectionEnum.Bottom;
                 Debug.Log("自己摸牌");
 
+                if (reEnterCardNameList.Count==14&&reEntergangCount==0)//刚刚开始游戏 并且是自己摸牌
+                {
+                    Debug.Log("刚开始游戏");
+                    MJCardsManager._instance.addCard(DirectionEnum.Bottom,reEnterCardNameList[13]);
+                    reEnterCardNameList.RemoveAt(13);
+                }
+                MJCardsManager._instance.createCards(reEnterCardNameList);//创建底部牌
             }
             else
             {
+                MJCardsManager._instance.createCards(reEnterCardNameList);//创建底部牌
+                if (currentCardPointTemp >= 0)
+                {
+                    MJCardsManager._instance.bottonRemoveHandCardByName(currentCardPointTemp + "");
+                }
                 GlobalDataScript.isDrag = true;
                 curDirString = DirectionEnum.Bottom;
                 Debug.Log("自己摸牌");
@@ -1374,26 +1711,63 @@ public class MyMahjongScript : MonoBehaviour
         { //别人摸牌
             curDirString = getDirection(pickAvatarIndexTemp);
             MJCardsManager._instance.addCard(curDirString, "7");
+            MJCardsManager._instance.createCards(reEnterCardNameList);//创建底部牌
         }
+       
 
         //设置剩余牌
 
         Debug.Log("余牌:" + surplusCards);
         
+        
         MJCardsPile._instance.getCardMul(136 - int.Parse(surplusCards) - 1);
         MJUIManager._instance.mJDeskPage.setleaveCards(int.Parse(surplusCards));
-	}
+        GlobalDataScript.reEnterRoomData = null;
+    }
 
     /// <summary>
     /// 重置桌面
     /// </summary>
     public void reSet()
     {
+        isGetJing = false;
+        isGetShaiZi = false;
+        isFaPai = false;
+        mineList = null;
         MJDicePlace._instance.reset();
         MJCardsPile._instance.reSet();
         MJCardsManager._instance.reSet();
         MJUIManager._instance.mJDeskPage.reset();
+        System.GC.Collect();
     }
+
+    #region 分数变化回调
+
+    private MJScoreModel gangScoreModel;
+    /// <summary>
+    /// 暗杠分数变化
+    /// </summary>
+    private void gangCallBack()
+    {
+        if (gangScoreModel==null)
+        {
+            return;
+        }
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Bottom, gangScoreModel.bottomChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Top, gangScoreModel.topChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Left, gangScoreModel.leftChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Right, gangScoreModel.rightChangeScore);
+    }
+
+    private MJScoreModel huscoreMode;
+    private void huCallBack()
+    {
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Bottom, huscoreMode.bottomChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Top, huscoreMode.topChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Left, huscoreMode.leftChangeScore);
+        MJPlayerManager._instance.changeScoreByPos(DirectionEnum.Right, huscoreMode.rightChangeScore);
+    }
+    #endregion
 
 }
 public class DirectionEnum

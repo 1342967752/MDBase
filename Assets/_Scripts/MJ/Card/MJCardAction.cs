@@ -2,6 +2,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using UnityEngine.Events;
 
 /// <summary>
 /// 卡牌动作
@@ -79,7 +80,7 @@ public class MJCardAction : MonoBehaviour {
         addCard3D = addCard;
         this.toPos = toPos;
 
-        addCard3D.transform.DOLocalMoveY(addCard.transform.localPosition.y+MJSize.CardSize3D.z,0.2f).OnComplete(moveUpCallBack3D).SetUpdate(true);
+        addCard3D.transform.DOLocalMoveY(addCard.transform.localPosition.y+MySize.CardSize3D.z,0.2f).OnComplete(moveUpCallBack3D).SetUpdate(true);
         Debug.Log("向上");
     }
 
@@ -158,18 +159,42 @@ public class MJCardAction : MonoBehaviour {
         removeEmpty(handCards, poss);
     }
 
-    public void removeCards(List<GameObject> handCards, int count)
+    /// <summary>
+    /// 移除指定牌
+    /// </summary>
+    /// <param name="handCards"></param>
+    /// <param name="cardName"></param>
+    public void removeCards(List<GameObject> handCards,List<string> cardName)
     {
-        if (handCards.Count<count)
+        if (handCards.Count<cardName.Count)
         {
             Debug.Log("牌数量不足，不可移除");
             return;
         }
 
-        for (int i = 0; i < count; i++)
+        if (cardName==null)
         {
-            Destroy(handCards[0]);
-            handCards.RemoveAt(0);
+            for (int i = 0; i < cardName.Count; i++)
+            {
+                Destroy(handCards[0]);
+                handCards.RemoveAt(0);
+            }
+        }
+        else
+        {
+            for (int j=0;j<cardName.Count;j++)
+            {
+                for (int i = 0; i < handCards.Count; i++)
+                {
+                    if (handCards[i].name.Equals(cardName[j]))
+                    {
+                        Destroy(handCards[i]);
+                        handCards.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+            
         }
     }
     #endregion
@@ -185,11 +210,24 @@ public class MJCardAction : MonoBehaviour {
     /// <param name="localEulerAngles">角度</param>
     public GameObject createCard(string name,Transform parent,Vector3 pos,Vector3 localScale,Vector3 localEulerAngles)
     {
-        GameObject temp = Instantiate(Resources.Load<GameObject>(MJPath.MJModelPath + name));
+        GameObject temp = Instantiate(Resources.Load<GameObject>(MyPath.MJModelPath + name));
         temp.name = name;
         temp.transform.SetParent(parent);
         temp.transform.localPosition = pos;
         temp.transform.localScale = localScale;
+        temp.transform.localEulerAngles = localEulerAngles;
+        return temp;
+    }
+
+    /// <summary>
+    /// 设置位置
+    /// </summary>
+    /// <param name="temp"></param>
+    /// <param name="pos"></param>
+    /// <param name="localEulerAngles"></param>
+    public GameObject setPostion(GameObject temp,Vector3 pos, Vector3 localEulerAngles)
+    {
+        temp.transform.localPosition = pos;
         temp.transform.localEulerAngles = localEulerAngles;
         return temp;
     }
@@ -246,6 +284,51 @@ public class MJCardAction : MonoBehaviour {
         }
     }
 
+    public void removeEmptyNoAnim(List<Image> handCards, float[] poss)
+    {
+        int empty = 0;
+        int count = 0;
+        //找到第一个空位置
+        for (int i = 0; i < handCards.Count; i++)
+        {
+            if (handCards[i] == null)
+            {
+                empty = i;
+                count++;
+            }
+        }
+
+        empty = empty + 1 - count;
+
+        //填充位置
+        MJCard.canDrag = false;
+        for (int i = empty + count; i < handCards.Count; i++)
+        {
+            if (handCards.Count - 1 == i)
+            {
+                handCards[i].transform.DOLocalMoveX(poss[i - count], 0.2f).SetUpdate(true).OnComplete(animCompleteCallBack);
+            }
+            else
+            {
+                handCards[i].transform.DOLocalMoveX(poss[i - count], 0.2f).SetUpdate(true);
+            }
+
+        }
+
+        //如果没有执行上面循环则执行下面if语句
+        if (empty + count >= handCards.Count)
+        {
+            animCompleteCallBack();
+        }
+
+        //移除两个空位置
+
+        for (int i = 0; i < count; i++)
+        {
+            handCards.RemoveAt(empty);
+        }
+    }
+
     /// <summary>
     /// 动画完毕回调
     /// </summary>
@@ -254,26 +337,51 @@ public class MJCardAction : MonoBehaviour {
         MJCard.canDrag = true;
     }
 
-    //移除一个空位置
-    public void removeEmpty(List<GameObject> handCards,Vector3[] poss)
+    //移除所有空位置
+    public void removeEmpty(List<GameObject> handCards,Vector3[] poss,int pointer)
     {
-        int empty = 0;
+        int emptyCount = 0;
+        
         for (int i = 0; i < handCards.Count; i++)
         {
             if (handCards[i]==null)
             {
-                empty = i;
+                emptyCount++;
+                continue;
             }
-        }
-
-        //填充位置
-        for (int i = empty+1; i < handCards.Count; i++)
-        {
-            handCards[i].transform.DOLocalMoveX(poss[i-1].x, 0.2f).SetUpdate(true);
+            handCards[i - emptyCount] = handCards[i];
+            handCards[i].transform.DOLocalMoveX(poss[pointer+i-emptyCount].x, 0.2f).SetUpdate(true);
         }
 
         //移除空位置
-        handCards.RemoveAt(empty);
+        for (int i=0;i<emptyCount;i++)
+        {
+            handCards.RemoveAt(handCards.Count - 1);
+        }
+        Debug.Log("移除:" + emptyCount);
+    }
+
+    public void removeEmptyNoAnim(List<GameObject> handCards, Vector3[] poss, int pointer)
+    {
+        int emptyCount = 0;
+
+        for (int i = 0; i < handCards.Count; i++)
+        {
+            if (handCards[i] == null)
+            {
+                emptyCount++;
+                continue;
+            }
+            handCards[i - emptyCount] = handCards[i];
+            handCards[i].transform.localPosition= poss[pointer + i - emptyCount];
+        }
+
+        //移除空位置
+        for (int i = 0; i < emptyCount; i++)
+        {
+            handCards.RemoveAt(handCards.Count - 1);
+        }
+        Debug.Log("移除:" + emptyCount);
     }
     #endregion
 
@@ -287,6 +395,19 @@ public class MJCardAction : MonoBehaviour {
         {
             if (list[i]==null)
             {
+                Debug.Log("存在空->" + i);
+            }
+
+        }
+    }
+
+    public void findEmpty(List<GameObject> list)
+    {
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i] == null)
+            {
+                Debug.Log(list.Count);
                 Debug.Log("存在空->" + i);
             }
 
@@ -345,7 +466,123 @@ public class MJCardAction : MonoBehaviour {
     /// <returns></returns>
     public Sprite getSpriteByName(string name)
     {
-        return Resources.Load<Sprite>(MJPath.MJBottonSpritePath + name);
+        return Resources.Load<Sprite>(MyPath.MJBottonSpritePath + name);
+    }
+
+    /// <summary>
+    /// 交换list里面两个gb
+    /// </summary>
+    /// <param name="list"></param>
+    /// <param name="one"></param>
+    /// <param name="two"></param>
+    public void changeGB(List<GameObject> list,int one,int two)
+    {
+        if (list==null||list.Count==0||one<0||two<0||one==two||one>list.Count-1||two>list.Count-1)
+        {
+            Debug.Log("不能交换" + one + "|" + two);
+            return;
+        }
+
+        GameObject temp = list[one];
+        list[one] = list[two];
+        list[two] = temp;
+    }
+
+    /// <summary>
+    /// 去重
+    /// </summary>
+    /// <param name="list"></param>
+    public void removeTheSame(List<string> list)
+    {
+        if (list==null||list.Count==0)
+        {
+            return;
+        }
+
+        //去重
+        for (int i = 0; i < list.Count; i++)  //外循环是循环的次数
+        {
+            for (int j = i + 1; j < list.Count; j++)  //内循环是 外循环一次比较的次数
+            {
+
+                if (list[i].Equals(list[j]))
+                {
+                    list.RemoveAt(j);
+                    Debug.Log("重复:" + list[i]);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 排序 （从小到大）
+    /// </summary>
+    public void sort(List<string> list)
+    {
+        if (list==null||list.Count==0)
+        {
+            return;
+        }
+
+        string temp = "";
+        for (int i=0;i<list.Count;i++)
+        {
+            for (int j=i+1;i<list.Count;i++)
+            {
+                if (int.Parse(list[i])>int.Parse(list[j]))
+                {
+                    temp = list[i];
+                    list[i] = list[j];
+                    list[j] = temp;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 卡牌排序
+    /// </summary>
+    /// <param name="list"></param>
+    public void sort(List<GameObject> list)
+    {
+        if (list.Count <= 0)
+        {
+            return;
+        }
+
+        for (int i = 0; i < list.Count; i++)
+        {
+            for (int j = i + 1; j < list.Count; j++)
+            {
+                if (list[i].GetComponent<MJCard>().cardtype < list[j].GetComponent<MJCard>().cardtype)
+                {
+                    changePos(list, i, j);
+                }
+                else if (list[i].GetComponent<MJCard>().cardtype == list[j].GetComponent<MJCard>().cardtype && int.Parse(list[i].gameObject.name) > int.Parse(list[j].gameObject.name))
+                {
+                    changePos(list, i, j);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 两个图片交换位置
+    /// </summary>
+    /// <param name="img1"></param>
+    /// <param name="img2"></param>
+    private void changePos(List<GameObject> handCards, int index01, int index02)
+    {
+        GameObject temp = handCards[index01];
+        
+        //数组交换位置
+        handCards[index01] = handCards[index02];
+        handCards[index02] = temp;
+
+        //场景中交换位置
+        Vector3 pos1 = handCards[index01].transform.localPosition;
+        handCards[index01].transform.localPosition = handCards[index02].transform.localPosition;
+        handCards[index02].transform.localPosition = pos1;
     }
 
     /// <summary>

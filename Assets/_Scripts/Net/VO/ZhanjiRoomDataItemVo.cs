@@ -1,7 +1,7 @@
 ﻿using System;
-/**
- *战绩每项内容 
- */
+/// <summary>
+///玩家每项内容 
+/// </summary>
 namespace AssemblyCSharp
 {
 	[Serializable]

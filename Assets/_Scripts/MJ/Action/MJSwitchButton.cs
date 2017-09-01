@@ -8,7 +8,7 @@ public class MJSwitchButton :MonoBehaviour,IPointerClickHandler
 {
 	private Transform OnObj;//onState transform
 	private Transform OffObj;//offState transform
-	//get obj by name
+
 	public void init()
 	{
 		try {
@@ -39,12 +39,12 @@ public class MJSwitchButton :MonoBehaviour,IPointerClickHandler
 		set {
             m_isOn = value;
 			changeState(m_isOn);
-            onClick.Invoke(m_isOn, this.gameObject);
+            onClick.Invoke(m_isOn, gameObject);
 		}
 	}
 	void Start()
 	{
-		//init();
+		init();
 		onClick.AddListener(MJUIManager._instance.switchButtonListener);
 	}
 

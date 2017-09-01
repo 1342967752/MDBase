@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-
+/// <summary>
+/// 房间战绩数据
+/// </summary>
 namespace AssemblyCSharp
 {
 	[Serializable]

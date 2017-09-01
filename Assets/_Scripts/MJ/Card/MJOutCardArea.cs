@@ -9,6 +9,9 @@ public class MJOutCardArea : MonoBehaviour {
     private Vector3[] cardsPos = new Vector3[30];//存储位置的数组
     private int pointer = 0;//
     private string pos = "";
+    private MaJiangRecordScript maJiangRecordScript;//麻将回放主脚本
+    private MyMahjongScript myMahjongScript;//麻将游戏主脚本
+    private bool isRecord = false;//是否战绩回放
 
     void Awake()
     {
@@ -27,6 +30,18 @@ public class MJOutCardArea : MonoBehaviour {
             case "Top":pos = DirectionEnum.Top;break;
         }
         createPostion();
+
+        //给主脚本赋值
+        if (MJScenesManager.Instance.curSceneName().Equals(SceneName.MaJiang))
+        {
+            myMahjongScript = GameObject.Find("init").GetComponent<MyMahjongScript>();
+            isRecord = false;
+        }
+        else if (MJScenesManager.Instance.curSceneName().Equals(SceneName.MaJiangRecord))
+        {
+            maJiangRecordScript= GameObject.Find("init").GetComponent<MaJiangRecordScript>();
+            isRecord = true;
+        }
     }
 
     /// <summary>
@@ -43,9 +58,20 @@ public class MJOutCardArea : MonoBehaviour {
     /// <param name="name"></param>
     public void outCard(string name)
     {
-        GameObject.Find("init").GetComponent<MyMahjongScript>().outCardInfo = new MJOutCardInfo();
-        GameObject.Find("init").GetComponent<MyMahjongScript>().outCardInfo.setOutInfo(MJCardAction.Instance.createCard(name, transform, cardsPos[pointer++], Vector3.one, MJPostion.outCardEulerAngles)
-            ,pos);
+       if (!isRecord)
+       {
+            myMahjongScript.outCardInfo = new MJOutCardInfo();
+            myMahjongScript.outCardInfo.setOutInfo(MJCardAction.Instance.createCard(name, transform, cardsPos[pointer++], Vector3.one, MyPostion.outCardEulerAngles)
+                , pos);
+            MJCardsManager._instance.setZhuiZi(myMahjongScript.outCardInfo.outCardGB.transform);
+        }
+        else
+        {
+            maJiangRecordScript.outCardInfo = new MJOutCardInfo();
+            maJiangRecordScript.outCardInfo.setOutInfo(MJCardAction.Instance.createCard(name, transform, cardsPos[pointer++], Vector3.one, MyPostion.outCardEulerAngles)
+                , pos);
+            MJCardsManager._instance.setZhuiZi(maJiangRecordScript.outCardInfo.outCardGB.transform);
+        }
         Debug.Log("出牌:" + name);
     }
 
@@ -56,6 +82,25 @@ public class MJOutCardArea : MonoBehaviour {
     {
         MJCardAction.Instance.destroyAllChild(transform);
         pointer = 0;
+    }
+
+    /// <summary>
+    /// 获取最后一张牌的信息
+    /// </summary>
+    /// <returns></returns>
+    public MJOutCardInfo getOutCardInfo()
+    {
+        if (transform.childCount==0)
+        {
+            return null;
+        }
+        GameObject card = transform.GetChild(transform.childCount - 1).gameObject;
+
+        MJOutCardInfo outInfo = new MJOutCardInfo();
+        outInfo.setOutInfo(card, pos);
+
+        MJCardsManager._instance.setZhuiZi(card.transform);//设置出牌的锥子
+        return outInfo;
     }
 
     /// <summary>

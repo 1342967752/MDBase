@@ -2,7 +2,9 @@
 using UnityEngine.UI;
 using TinyTeam.UI;
 
-
+/// <summary>
+/// 麻将游戏桌面
+/// </summary>
 public class MJDeskPage : TTUIPage {
     private Text leaveText;//局数显示
     private Text allText;
@@ -10,10 +12,13 @@ public class MJDeskPage : TTUIPage {
     private GameObject jingParent;//精牌容器
     private Text leaveCards;//剩余牌数
     private GameObject jingContent;//精牌content
+    private bool isRecord = false;//是够是战绩回放
+    private Text speedText;//显示速度text
+    private Text pauseText;//战绩回放暂停text
 
     public MJDeskPage() : base(UIType.Normal, UIMode.DoNothing, UICollider.Normal)
     {
-        uiPath = MJPath.MJDeskPagePath;
+        uiPath = MyPath.MJDeskPagePath;
     }
 
     public override void Awake(GameObject go)
@@ -29,7 +34,43 @@ public class MJDeskPage : TTUIPage {
         inviteBtn.GetComponent<Button>().onClick.AddListener(inviteOnClick);
         leaveCards = transform.FindChild("LeaveCards/count").GetComponent<Text>();
         jingContent = transform.FindChild("Jing/jing").gameObject;
-        setleaveCards(136);
+        jingContent.transform.parent.gameObject.SetActive(false);
+        leaveCards.transform.parent.gameObject.SetActive(false);
+
+        //是否战绩回放
+        isRecord = GlobalDataScript.isRecord;
+        if (isRecord)
+        {
+            //显示速度
+            transform.FindChild("RecordXSpeed").gameObject.SetActive(true);
+            speedText = transform.FindChild("RecordXSpeed/Text").GetComponent<Text>();
+            transform.FindChild("RecordXSpeed").GetComponent<Button>().onClick.AddListener(()=>{
+                speedText.text = "X" + MaJiangRecordScript.setSpeed();
+            });
+            speedText.text = "X" + MaJiangRecordScript.getSpeed();
+
+            //显示暂停按钮
+            transform.FindChild("RecordPauseBtn").gameObject.SetActive(true);
+            pauseText = transform.FindChild("RecordPauseBtn/Text").GetComponent<Text>();
+            transform.FindChild("RecordPauseBtn").GetComponent<Button>().onClick.AddListener(() =>
+            {
+                if (MaJiangRecordScript.isPause)
+                {
+                    MaJiangRecordScript.isPause = false;
+                    pauseText.text = MyName.Pause;
+                }
+                else
+                {
+                    MaJiangRecordScript.isPause = true;
+                    pauseText.text = MyName.Play;
+                }
+            });
+        }
+        else
+        {
+            transform.FindChild("RecordXSpeed").gameObject.SetActive(false);
+            transform.FindChild("RecordPauseBtn").gameObject.SetActive(false);
+        }
     }
 
 
@@ -40,22 +81,27 @@ public class MJDeskPage : TTUIPage {
     /// <param name="fu"></param>
     public void setJing(int zheng,int fu)
     {
+        if (!jingContent.transform.parent.gameObject.activeInHierarchy)
+        {
+            jingContent.transform.parent.gameObject.SetActive(true);
+        }
+
         if (jingContent.transform.childCount>0)
         {
             return;
         }
 
-        Image card = Resources.Load<Image>(MJPath.MJBottonAddCardPath + "card");
+        Image card = Resources.Load<Image>(MyPath.MJBottonAddCardPath + "card");
         GameObject temp;
         //正精
-        card.transform.FindChild("Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJBottonSpritePath+zheng);
+        card.transform.FindChild("Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJBottonSpritePath+zheng);
         temp = GameObject.Instantiate(card.gameObject);
         temp.transform.FindChild("Jing").gameObject.SetActive(false);
         temp.transform.SetParent(jingContent.transform);
         temp.transform.localScale = Vector3.one;
 
         //副精
-        card.transform.FindChild("Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MJPath.MJBottonSpritePath + fu);
+        card.transform.FindChild("Image").GetComponent<Image>().sprite = Resources.Load<Sprite>(MyPath.MJBottonSpritePath + fu);
         temp = GameObject.Instantiate(card.gameObject);
         temp.transform.FindChild("Jing").gameObject.SetActive(false);
         temp.transform.SetParent(jingContent.transform);
@@ -83,6 +129,11 @@ public class MJDeskPage : TTUIPage {
     /// <param name="count"></param>
     public void setleaveCards(int count)
     {
+        if (!leaveCards.transform.parent.gameObject.activeInHierarchy)
+        {
+            leaveCards.transform.parent.gameObject.SetActive(true);
+        }
+
         leaveCards.text ="" + count;
     }
 
@@ -93,8 +144,20 @@ public class MJDeskPage : TTUIPage {
     /// <param name="tolTime">总局数</param>
     public void setTurn(int curTime, int tolTime)
     {
+        Debug.Log("单前局数:" + curTime);
+        if (curTime==tolTime)
+        {
+            leaveText.transform.parent.gameObject.SetActive(false);
+            return;
+        }
+        
         leaveText.text = (tolTime- curTime) + "";
         allText.text = "/" + tolTime;
+
+        if (!leaveText.transform.parent.gameObject.activeInHierarchy)
+        {
+            leaveText.transform.parent.gameObject.SetActive(true);
+        }
     }
 
     /// <summary>
@@ -107,6 +170,12 @@ public class MJDeskPage : TTUIPage {
 
     private void quit()
     {
+        if (GlobalDataScript.isRecord)
+        {
+            MJUIManager._instance.mJQuitRoomPage.showRequestQuit();//显示退出
+            return;
+        }
+
         if (GlobalDataScript.isStartGame)
         {
             MJUIManager._instance.mJQuitRoomPage.showRequestVote();
@@ -142,7 +211,8 @@ public class MJDeskPage : TTUIPage {
     /// </summary>
     public void reset()
     {
-        setleaveCards(136);
         cleamJing();
+        leaveCards.transform.parent.gameObject.SetActive(false);
+        jingContent.transform.parent.gameObject.SetActive(false);
     }
 }

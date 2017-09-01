@@ -46,28 +46,30 @@
             Canvas can = go.AddComponent<Canvas>();
             can.renderMode = RenderMode.ScreenSpaceOverlay;
             can.pixelPerfect = true;
-            //GameObject camObj = new GameObject("UICamera");
-            //camObj.layer = 0;
-            ////camObj.transform.parent = go.transform;
-            //camObj.transform.localPosition = new Vector3(0, 1.05f, -0.88f);
-            //Camera cam = camObj.AddComponent<Camera>();
-            //cam.clearFlags = CameraClearFlags.SolidColor;
-            //cam.backgroundColor = Color.black;
-            //cam.gameObject.AddComponent<FlareLayer>();
-            //cam.farClipPlane = 200f;
-            //cam.fieldOfView = 35;
-            //cam.transform.eulerAngles = new Vector3(50, 0, 0);
-            //can.worldCamera = cam;
-            //m_Instance.uiCamera = cam;
-            //cam.cullingMask = -1;
-            ////cam.nearClipPlane = -50f;
-            ////cam.farClipPlane = 50f;
-            ////cam.far = 500;
+            GameObject camObj = new GameObject("UICamera");
+            camObj.layer = 0;
+            //camObj.transform.parent = go.transform;
+            camObj.transform.localPosition = Vector3.zero;
+            Camera cam = camObj.AddComponent<Camera>();
+            cam.clearFlags = CameraClearFlags.Depth;
+            cam.cullingMask = 1<<5;
+            cam.backgroundColor = Color.black;
+            cam.gameObject.AddComponent<FlareLayer>();
+            cam.farClipPlane = 200f;
+            cam.fieldOfView = 35;
+            cam.transform.eulerAngles =Vector3.zero;
+            can.worldCamera = cam;
+            cam.depth = 1;
+            m_Instance.uiCamera = cam;
+            //cam.nearClipPlane = -50f;
+            //cam.farClipPlane = 50f;
+            //cam.far = 500;
+           
 
-
-            ////add audio listener
+            //add audio listener
             //camObj.AddComponent<AudioListener>();
-            //camObj.AddComponent<GUILayer>();
+            camObj.AddComponent<GUILayer>();
+            camObj.transform.SetParent(go.transform);
 
             CanvasScaler cs = go.AddComponent<CanvasScaler>();
             cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;

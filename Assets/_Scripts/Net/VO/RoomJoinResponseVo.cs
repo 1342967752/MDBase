@@ -13,14 +13,14 @@ namespace AssemblyCSharp
 		public int roomId;
 		public int roomType;
 		public int roundNumber;
-		public bool sevenDouble;
+		public bool sevenDouble;//七小队
 		public int xiaYu;
 		public int ziMo;
 		public int magnification;
-		public List<AvatarVO> playerList;
-        public int currentRound;
+		public List<AvatarVO> playerList;//玩家list
+        public int currentRound;//单前圈数
         public int id;
-        public object endStatistics;
+        public object endStatistics;//游戏结束数据
 
         //精牌
         public JingResponse jingPaiVo;

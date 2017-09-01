@@ -2,6 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 using AssemblyCSharp;
+using DG.Tweening;
 
 public class MJPlayerItem : MonoBehaviour {
     private Image head;//头像
@@ -10,8 +11,11 @@ public class MJPlayerItem : MonoBehaviour {
     private GameObject readyUI;//准备ui
     private GameObject offLine;//不在线图标
     private GameObject bankerImg;//地主图标
+    private Text changeScore;//改变分数text
+    private MJEmojiBox mJEmojiBox;//表情处理器
+    private GameObject huIcon;//胡的图标
 
-    private int avatarVOIndex;//玩家index
+    public int avatarVOIndex=-1;//玩家index 
     private AvatarVO avatarVO=null;//玩家信息
 
     void Awake()
@@ -21,16 +25,33 @@ public class MJPlayerItem : MonoBehaviour {
 
     void init()
     {
-        head = transform.FindChild("Head").GetComponent<Image>();
-        scoreText = transform.FindChild("Score/Text").GetComponent<Text>();
+        head = transform.FindChild("Head/Mask/HeadImg").GetComponent<Image>();
+        scoreText = transform.FindChild("Head/Score/Text").GetComponent<Text>();
+        changeScore = transform.FindChild("ChangeScore").GetComponent<Text>();
         readyUI = transform.FindChild("Ready").gameObject;
         offLine = transform.FindChild("OffLine").gameObject;
         bankerImg = transform.FindChild("Head/BankerImg").gameObject;
         head.sprite = null;
         scoreText.text ="";
+        changeScore.gameObject.SetActive(false);
+        huIcon = transform.FindChild("Head/Hu").gameObject;
+        setHu(false);
 
         //隐藏玩家
-        head.transform.parent.gameObject.SetActive(false);
+        head.transform.parent.parent.gameObject.SetActive(false);
+        head.GetComponent<Button>().onClick.AddListener(() => {
+            if (GlobalDataScript.isRecord)
+            {
+                return;
+            }
+
+            if (avatarVO!=null)
+            {
+                MJUIManager._instance.mJMyInfoPage.setInfo(head, avatarVO.account.nickname, avatarVO.account.id + "", avatarVO.locationName,avatarVO.account.uuid,avatarVO.winTimes,avatarVO.loseTimes,avatarVO.drawTimes);
+            }
+        });
+
+        mJEmojiBox = GetComponent<MJEmojiBox>();
 
         setReady(false);
         isOnLine(true);
@@ -44,42 +65,18 @@ public class MJPlayerItem : MonoBehaviour {
     /// <param name="score">分数</param>
     public void setInfo(AvatarVO avatarVO,int index)
     {
-        head.transform.parent.gameObject.SetActive(true);
+        head.transform.parent.parent.gameObject.SetActive(true);
         scoreText.text = "" + avatarVO.scores;
         score = avatarVO.scores;
         this.avatarVO = avatarVO;
         avatarVOIndex = index;
         setReady(avatarVO.isReady);//设置准备
-        if (avatarVO.main)
-        {
-            setBanker(true);
-        }
-        Debug.Log("玩家性别:" + avatarVO.account.sex);
-        StartCoroutine(LoadImg());
-    }
-
-    Texture2D texture2D;
-    IEnumerator LoadImg()
-    {
-        //开始下载图片
-        if (avatarVO.account.headicon != null && avatarVO.account.headicon != "")
-        {
-            WWW www = new WWW(avatarVO.account.headicon);
-            yield return www;
-            //下载完成，保存图片到路径filePath
-            try
-            {
-                texture2D = www.texture;
-               // byte[] bytes = texture2D.EncodeToPNG();
-                //将图片赋给场景上的Sprite
-                Sprite tempSp = Sprite.Create(texture2D, new Rect(0, 0, texture2D.width, texture2D.height), new Vector2(0, 0));
-                head.sprite = tempSp;
-            }
-            catch (System.Exception e)
-            {
-                WantedTextTool.Instance.addTip("LoadImg" + e.Message, 0);
-            }
-        }
+       
+        setBanker(avatarVO.main);
+        isOnLine(avatarVO.isOnLine);
+        Debug.Log(avatarVO.account.nickname+"性别:" + avatarVO.account.sex+"|分数:"+avatarVO.scores);
+        Debug.Log("胜利次数:"+avatarVO.winTimes);
+        GameTools.instance.loadSpriteOnNet(loadSpriteCallBack, avatarVO.account.headicon);
     }
 
     /// <summary>
@@ -125,10 +122,19 @@ public class MJPlayerItem : MonoBehaviour {
        if (isTrue)
        {
             bankerImg.SetActive(true);
+            if (avatarVO!=null)
+            {
+                avatarVO.main = true;
+            }
+           
         }
         else
         {
             bankerImg.SetActive(false);
+            if (avatarVO != null)
+            {
+                avatarVO.main = false;
+            }
         }
     }
 
@@ -181,9 +187,10 @@ public class MJPlayerItem : MonoBehaviour {
         head.sprite = null;
         setReady(false);
         scoreText.text = "";
-        avatarVOIndex = 0;
+        avatarVOIndex = -1;
         avatarVO = null;
-        head.transform.parent.gameObject.SetActive(false);
+        head.transform.parent.parent.gameObject.SetActive(false);
+        setHu(false);
     }
 
     /// <summary>
@@ -192,8 +199,6 @@ public class MJPlayerItem : MonoBehaviour {
     /// <param name="onLine"></param>
     public void isOnLine(bool onLine)
     {
-       
-
         if (onLine)
         {
             head.transform.FindChild("Hide").gameObject.SetActive(false);
@@ -204,5 +209,71 @@ public class MJPlayerItem : MonoBehaviour {
             head.transform.FindChild("Hide").gameObject.SetActive(true);
             offLine.SetActive(true);
         }
+    }
+
+    /// <summary>
+    /// 显示改变分数
+    /// </summary>
+    /// <param name="score"></param>
+    /// <param name="time"></param>
+    public void showScore(int score,float time)
+    {
+        if (time<0)
+        {
+            return;
+        }
+
+        if (score>=0)
+        {
+            changeScore.font = Resources.Load<Font>(MyPath.UIFontsPath + "duiju_up_font");
+            changeScore.text ="+"+score;
+        }
+        else
+        {
+            changeScore.font = Resources.Load<Font>(MyPath.UIFontsPath + "duiju_down_font");
+            changeScore.text =score+"";
+        }
+        Debug.Log("显示分数:" + score);
+        changeScore.gameObject.SetActive(true);
+        changeScore.transform.DOPunchScale(Vector3.one*0.2f, time).SetUpdate(true).OnComplete(changeScoreAnimOnComplete);
+    }
+
+    /// <summary>
+    /// 改变分数动画结束回调
+    /// </summary>
+    private void changeScoreAnimOnComplete()
+    {
+        changeScore.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 显示表情
+    /// </summary>
+    /// <param name="emojiIndex"></param>
+    public void showEmoji(int emojiIndex)
+    {
+        mJEmojiBox.addEmoji(emojiIndex);
+    }
+
+    /// <summary>
+    /// 加载图片回调
+    /// </summary>
+    /// <param name="o"></param>
+    private void loadSpriteCallBack(HttpLoadModel model)
+    {
+        if (model.error!=null)
+        {
+            return;
+        }
+        head.sprite = model.sprite;
+    }
+
+    /// <summary>
+    /// 设置胡
+    /// </summary>
+    /// <param name="isHu"></param>
+    public void setHu(bool isHu)
+    {
+        huIcon.SetActive(isHu);
     }
 }

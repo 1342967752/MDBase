@@ -37,7 +37,7 @@ public class SocketEventHandle:MonoBehaviour
     public ServerCallBackEvent cardChangeNotice;//房卡数据变化
     public ServerCallBackEvent offlineNotice;//离线通知
     public ServerCallBackEvent onlineNotice;//上线通知
-                                            //public ServerCallBackEvent rewardRequestCallBack;//投资请求返回
+                                            
     public ServerCallBackEvent giftResponse;//奖品回调
     public ServerCallBackEvent returnGameResponse;
     public ServerCallBackEvent gameFollowBanderNotice;//跟庄
@@ -53,10 +53,11 @@ public class SocketEventHandle:MonoBehaviour
     public ServerCallBackEvent gameBackPlayResponse;//回放返回数据
     public ServerCallBackEvent otherTeleLogin;//其他设备登陆账户
     public ServerCallBackEvent chiCardCallBack;//吃牌回调
-
+    public ServerCallBackEvent shaiZiCallBack;//色子回调
     public ServerCallBackEvent jingCardCallBack;//精牌回调
-                                                //private List<ClientResponse> callBackResponseList;
-
+    public ServerCallBackEvent playRecordCallBack;//战绩记录回调
+    public ServerCallBackEvent feedBackCallBack;//反馈回调
+                                              
 
     private List<ClientResponse> callBackResponseList;
 
@@ -77,21 +78,35 @@ public class SocketEventHandle:MonoBehaviour
         {
             GameObject temp = new GameObject();
             temp.name = "SocketEventHandle";
+            temp.AddComponent<LoggerMono>();
             _instance = temp.AddComponent<SocketEventHandle>();
             DontDestroyOnLoad(temp);
         }
         return _instance;
     }
 
+    void Start()
+    {
+        addListenner();
+    }
+
+    private void addListenner()
+    {
+        cardChangeNotice += cardChangeCallBack;
+    }
+
+    private void removeListenner()
+    {
+        cardChangeNotice -= cardChangeCallBack;
+    }
 
     void FixedUpdate()
     {
-        while (callBackResponseList.Count > 0)
+        if (callBackResponseList.Count > 0)//一帧处理一条数据
         {
             ClientResponse response = callBackResponseList[0];
             callBackResponseList.RemoveAt(0);
             dispatchHandle(response);
-
         }
 
         if (isDisconnet)
@@ -108,12 +123,16 @@ public class SocketEventHandle:MonoBehaviour
     private void dispatchHandle(ClientResponse response)
     {
 
-
         switch (response.headCode)
         {
             case APIS.CLOSE_RESPONSE:
                 WantedTextTool.Instance.addTip("服务器关闭了", 0);
                 CustomSocket.getInstance().closeSocket();
+                MJUIManager._instance.reloginUIPage.setInfo("服务器关闭了");
+                MJUIManager._instance.reloginUIPage.setOnClick(() =>
+                {
+                    MJScenesManager.Instance.loadSceneNotAnim(SceneName.Login);
+                });
                 break;
             case APIS.LOGIN_RESPONSE:
                 if (LoginCallBack != null)
@@ -354,6 +373,18 @@ public class SocketEventHandle:MonoBehaviour
                     jingCardCallBack(response);
                 }
                 break;
+            case APIS.SAIZIPOINT_RESPONE:
+                if (shaiZiCallBack!=null)
+                {
+                    shaiZiCallBack(response);
+                }
+                break;
+            case APIS.FEEDBACK_RESPONSE:
+                if (feedBackCallBack!=null)
+                {
+                    feedBackCallBack(response);
+                }
+                break;
         }
 
 
@@ -385,7 +416,14 @@ public class SocketEventHandle:MonoBehaviour
     /// <param name="response"></param>
     public void onErrorCallBack(ClientResponse response)
     {
-       WantedTextTool.Instance.addTip("错误:"+response.message,1);
+       WantedTextTool.Instance.addTip(response.message,1);
+       
+        //关闭加载中界面
+        if (MJUIManager._instance.loadingPage.isActive())
+        {
+            MJUIManager._instance.loadingPage.close();
+        }
+
         if (response.message.Contains("登录")|| response.message.Contains("重新运行"))
         {
             MJUIManager._instance.reloginUIPage.setInfo(response.message);
@@ -395,6 +433,23 @@ public class SocketEventHandle:MonoBehaviour
             }
         }
     }
-    
+
+    /// <summary>
+    /// 房卡更新回调
+    /// </summary>
+    public void cardChangeCallBack(ClientResponse response)
+    {
+        if (GlobalDataScript.loginResponseData!=null)
+        {
+            GlobalDataScript.loginResponseData.account.roomcard = int.Parse(response.message);
+        }
+
+        if (MJScenesManager.Instance.curSceneName().Equals(SceneName.MainMenu))
+        {
+            MJUIManager._instance.mainMenuPage.setRoomCardNumber(int.Parse(response.message));
+        }
+    }
+
+
 }
 

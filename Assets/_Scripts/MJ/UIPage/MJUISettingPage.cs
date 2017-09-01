@@ -3,7 +3,7 @@ using TinyTeam.UI;
 using UnityEngine.UI;
 public class MJUISettingPage : TTUIPage{
 	public MJUISettingPage() : base(UIType.PopUp, UIMode.HideOther, UICollider.None){
-		uiPath = MJPath.MJUISettingPath;
+		uiPath = MyPath.MJUISettingPath;
 	}
     private MJSwitchButton musicSwitch;
     private MJSwitchButton soundSwitch;

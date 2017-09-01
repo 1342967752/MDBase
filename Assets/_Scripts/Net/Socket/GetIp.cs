@@ -6,46 +6,71 @@ using System.Collections;
 public class GetIp : MonoBehaviour {
 
     private string ip = "";
-    private bool isGet = false;
 
-	void Update()
+    void Start()
     {
-        if (!isGet)
-        {
-            StartCoroutine(GET(APIS.getIpAddress));
-            isGet = true;
-        }
+        CustomSocket.getInstance().Connect();
+        ChatSocket.getInstance().Connect();
     }
 
+    //void FixedUpdate()
+    //{
+    //    if (!GlobalDataScript.isGetIP && !CustomSocket.getInstance().isConnected)
+    //    {
+    //        GameTools.instance.loadText(APIS.getIpAddress, getIpCallBack);
+    //        GlobalDataScript.isGetIP = true;
+    //    }
+    //}
 
-    IEnumerator GET(string url)
+
+    int time = 0;
+    IEnumerator checkeConnect()
     {
-        WWW www;
-        float mProgress=0;
-        www = new WWW(url);
-        yield return www;
-
-        mProgress = www.progress;
-        if (www.error != null)
+        while (true)
         {
-            Debug.Log(www.error);
-            MJUIManager._instance.reloginUIPage.setInfo("连接服务器失败!");
-            MJUIManager._instance.reloginUIPage.setOnClick(reLogin); 
+            if (CustomSocket.getInstance().isConnected)
+            {
+                break;
+            }
+            time++;
+            yield return new WaitForSeconds(0.2f);
+            if (time > 10)
+            {
+                time = 0;
+                MJUIManager._instance.reloginUIPage.setInfo("连接服务器失败!");
+                MJUIManager._instance.reloginUIPage.setOnClick(reLogin);
+                break;
+            }
+        }
+    }
+    /// <summary>
+    /// 重新登录获取信息
+    /// </summary>
+    public void reLogin()
+    {
+        GlobalDataScript.isGetIP = false;
+        MJUIManager._instance.loginPage.loginErrorCallBack();
+        Debug.Log("重新登录");
+    }
+
+    private void getIpCallBack(HttpLoadModel model)
+    {
+       if (model.error!=null)
+       {
+            MJUIManager._instance.loadingPage.close();
+            MJUIManager._instance.reloginUIPage.setInfo("拉取服务器信息失败!");
+            MJUIManager._instance.reloginUIPage.setOnClick(reLogin);
         }
         else
         {
-            ip = www.text;
-            APIS.socketUrl = ip;
-
+            ip = model.text;
+            APIS.socketUrl = ip;//设置ip
+            //APIS.chatSocketUrl = ip;
             //连接socket
             CustomSocket.getInstance().Connect();
             ChatSocket.getInstance().Connect();
-            Debug.Log("服务器地址:"+www.text);
+            MJUIManager._instance.loadingPage.close();
+            StartCoroutine(checkeConnect());
         }
-    }
-
-    public void reLogin()
-    {
-        isGet = false;
     }
 }

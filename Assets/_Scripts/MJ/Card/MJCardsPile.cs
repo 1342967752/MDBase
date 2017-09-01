@@ -23,6 +23,7 @@ public class MJCardsPile : MonoBehaviour {
     {
         _instance = this;
         init();
+        
     }
 
     /// <summary>
@@ -30,10 +31,10 @@ public class MJCardsPile : MonoBehaviour {
     /// </summary>
     private void init()
     {
-        bottonPile = transform.FindChild(MJName.BottonName).gameObject;
-        topPile = transform.FindChild(MJName.TopName).gameObject;
-        rightPile = transform.FindChild(MJName.RightName).gameObject;
-        leftPile = transform.FindChild(MJName.LeftName).gameObject;
+        bottonPile = transform.FindChild(MyName.BottonName).gameObject;
+        topPile = transform.FindChild(MyName.TopName).gameObject;
+        rightPile = transform.FindChild(MyName.RightName).gameObject;
+        leftPile = transform.FindChild(MyName.LeftName).gameObject;
 
         jingPaiParent = bottonPile;
         pileCards.Clear();
@@ -47,33 +48,32 @@ public class MJCardsPile : MonoBehaviour {
     public void createCardPile()
     {
         //产生位置
-        int count = MJSize.CardsCount/4;
+        int count = MySize.CardsCount/4;
         Vector3[] temp = new Vector3[count];
         cardsPos = temp;
-        MJCardAction.Instance.createPostion(temp, Vector3.zero, MJSize.CardSize3D, count / 2);
+        MJCardAction.Instance.createPostion(temp, Vector3.zero, MySize.CardSize3D, count / 2);
         //创建牌堆
         for (int i=0;i<temp.Length;i++)
         {
-            pileCards.Add(MJCardAction.Instance.createCard("9", bottonPile.transform, temp[i], Vector3.one, MJPostion.pileCardEulerAngles));
+            
+            pileCards.Add(MJCardAction.Instance.createCard("9", bottonPile.transform, temp[i], Vector3.one, MyPostion.pileCardEulerAngles));
         }
 
         for (int i = 0; i < temp.Length; i++)
         {
-            pileCards.Add(MJCardAction.Instance.createCard("9", rightPile.transform, temp[i], Vector3.one, MJPostion.pileCardEulerAngles));
+            pileCards.Add(MJCardAction.Instance.createCard("9", rightPile.transform, temp[i], Vector3.one, MyPostion.pileCardEulerAngles));
         }
 
         for (int i = 0; i < temp.Length; i++)
         {
-            pileCards.Add(MJCardAction.Instance.createCard("9", topPile.transform, temp[i], Vector3.one, MJPostion.pileCardEulerAngles));
+            pileCards.Add(MJCardAction.Instance.createCard("9", topPile.transform, temp[i], Vector3.one, MyPostion.pileCardEulerAngles));
         }
 
         for (int i=0;i<temp.Length;i++)
         {
-            pileCards.Add(MJCardAction.Instance.createCard("9", leftPile.transform, temp[i], Vector3.one, MJPostion.pileCardEulerAngles));
+            pileCards.Add(MJCardAction.Instance.createCard("9", leftPile.transform, temp[i], Vector3.one, MyPostion.pileCardEulerAngles));
         }
 
-       
-       
         Debug.Log("牌堆牌数->" + pileCards.Count);
     }
 
@@ -115,7 +115,6 @@ public class MJCardsPile : MonoBehaviour {
             Destroy(pileCards[currentPointer++]);
         }
         MJUIManager._instance.mJDeskPage.setleaveCards(leaveCards);
-        Debug.Log("单前牌数量:" + currentPointer);
     }
 
     /// <summary>
@@ -166,9 +165,9 @@ public class MJCardsPile : MonoBehaviour {
         }
         
         jingPos = jingPos % 34;
-        pileCards[posTemp] =MJCardAction.Instance.createCard(zheng+"", jingPaiParent.transform, cardsPos[jingPos], Vector3.one, MJPostion.pileCardEulerAngles);
+        pileCards[posTemp] =MJCardAction.Instance.createCard(zheng+"", jingPaiParent.transform, cardsPos[jingPos], Vector3.one, MyPostion.pileCardEulerAngles);
         pileCards[posTemp].name = "" + zheng;
-        pileCards[posTemp].transform.FindChild("group1").GetChild(0).localEulerAngles = MJPostion.jingAngles;
+        pileCards[posTemp].transform.FindChild("group1").GetChild(0).localEulerAngles = MyPostion.jingAngles;
     }
 
     /// <summary>
@@ -209,6 +208,5 @@ public class MJCardsPile : MonoBehaviour {
             Destroy(_instance);
             _instance = null;
         }
-        Destroy(gameObject);
     }
 }

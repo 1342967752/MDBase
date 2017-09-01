@@ -31,7 +31,7 @@ public class CustomSocket{
 		if (_instance == null) {
 			_instance = new CustomSocket ();
 		}
-
+        
 		return _instance;
 	}
 
@@ -53,6 +53,7 @@ public class CustomSocket{
             tcpclient = new TcpClient();
             //防止延迟,即时发送!
             tcpclient.NoDelay = true;
+            Debug.Log("服务器ip:" + APIS.socketUrl);
 			tcpclient.BeginConnect(APIS.socketUrl, 10122, new AsyncCallback(ConnectCallback), tcpclient);
         }
         catch(Exception ex)
@@ -138,7 +139,6 @@ public class CustomSocket{
 		try{
 			if(stream != null && tcpclient.Connected){
 				stream.Write(headBytes,0,headBytes.Length);
-			
 				return true;
 			}else{
 				isConnected = false;
